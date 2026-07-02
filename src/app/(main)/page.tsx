@@ -3,8 +3,11 @@ import { Product, Category } from '@/types';
 
 async function getFeaturedProducts(): Promise<Product[]> {
   try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!baseUrl) return [];
+
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/products?featured=true&limit=8`,
+      `${baseUrl}/api/products?featured=true&limit=8`,
       { next: { revalidate: 60 } }
     );
     if (!res.ok) return [];
@@ -17,8 +20,11 @@ async function getFeaturedProducts(): Promise<Product[]> {
 
 async function getCategories(): Promise<Category[]> {
   try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!baseUrl) return [];
+
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/categories`,
+      `${baseUrl}/api/categories`,
       { next: { revalidate: 60 } }
     );
     if (!res.ok) return [];
