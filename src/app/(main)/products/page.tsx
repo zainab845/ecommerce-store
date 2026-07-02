@@ -51,7 +51,7 @@ function ProductsContent() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">All Products</h1>
+      <h1 className="text-3xl font-bold text-white-900 mb-8">All Products</h1>
 
       {/* Filters bar */}
       <div className="flex flex-col sm:flex-row gap-3 mb-8">
@@ -60,12 +60,12 @@ function ProductsContent() {
           placeholder="Search products..."
           defaultValue={search}
           onChange={e => updateParam('search', e.target.value)}
-          className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400"
+          className="flex-1 px-4 py-2 border border-black-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400"
         />
         <select
           value={category}
           onChange={e => updateParam('category', e.target.value)}
-          className="px-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400 bg-white"
+          className="px-4 py-2 border border-black-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400 bg-white"
         >
           <option value="">All Categories</option>
           {categories.map(cat => (
