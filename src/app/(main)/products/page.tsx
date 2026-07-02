@@ -1,11 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
 import { Product, Category } from '@/types';
 
-export default function ProductsPage() {
+// Local environment: uncomment the next two lines when copying back to VS Code
+// import Link from 'next/link';
+// import { useSearchParams, useRouter } from 'next/navigation';
+
+// Canvas environment mocks to resolve esbuild errors:
+const Link = (props: any) => <a {...props} />;
+const useSearchParams = () => new URLSearchParams();
+const useRouter = () => ({ push: (url: string) => {} });
+
+function ProductsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
@@ -128,5 +135,17 @@ export default function ProductsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
+        <div className="text-lg font-medium text-gray-500 animate-pulse">Loading products...</div>
+      </div>
+    }>
+      <ProductsContent />
+    </Suspense>
   );
 }
