@@ -3,10 +3,11 @@ import { getProductById } from '@/lib/controllers/productController';
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // 1. Wrap params in a Promise
 ) {
   try {
-    const product = await getProductById(params.id);
+    const resolvedParams = await params; // 2. Await the params Promise
+    const product = await getProductById(resolvedParams.id); // 3. Use the resolved ID
 
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
