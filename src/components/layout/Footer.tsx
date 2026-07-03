@@ -1,5 +1,4 @@
 
-//import Link from 'next/link';
 
 
 const Link = (props: any) => <a {...props} />;
@@ -13,7 +12,7 @@ export default function Footer() {
           {/* 1. Brand Section */}
           <div className="col-span-1 md:col-span-1">
             <Link href="/" className="text-2xl font-bold text-white tracking-tight">
-              Shop<span className="text-indigo-500">.</span>
+              E-Shop<span className="text-indigo-500">.</span>
             </Link>
             <p className="mt-4 text-gray-400 text-sm leading-relaxed">
               Your ultimate destination for premium products. Quality, affordability, and fast shipping all in one place.
