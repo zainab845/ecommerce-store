@@ -76,7 +76,7 @@ export default function SignupPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
             <span className="text-2xl font-bold text-gray-900">
-              Shop<span className="text-indigo-600">.</span>
+              E-Shop<span className="text-indigo-600">.</span>
             </span>
           </Link>
           <h1 className="text-2xl font-bold text-gray-900 mt-6">Create an account</h1>
