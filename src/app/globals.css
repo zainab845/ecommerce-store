@@ -1,29 +1,28 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 @layer base {
   body {
-    @apply text-gray-900 bg-white;
+    background-color: #ffffff;
+    color: #111827; /* tailwind text-gray-900 */
   }
 
   input, textarea, select {
-    @apply text-gray-900;
+    color: #111827;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply text-gray-900;
+    color: #111827;
   }
 
   p {
-    @apply text-gray-700;
+    color: #374151; /* tailwind text-gray-700 */
   }
 
   a {
-    @apply text-gray-900;
+    color: #111827;
   }
 
   label {
-    @apply text-gray-700;
+    color: #374151;
   }
 }
