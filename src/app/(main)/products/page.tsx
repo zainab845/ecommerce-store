@@ -5,7 +5,7 @@ import { Product, Category } from '@/types';
 
 // Local environment: uncomment the next two lines when copying back to VS Code
 // import Link from 'next/link';
-// import { useSearchParams, useRouter } from 'next/navigation';
+ //import { useSearchParams, useRouter } from 'next/navigation';
 
 // Canvas environment mocks to resolve esbuild errors:
 const Link = (props: any) => <a {...props} />;
@@ -23,8 +23,15 @@ function ProductsContent() {
   const search = searchParams.get('search') ?? '';
   const sort = searchParams.get('sort') ?? '';
 
+  // Local state for the search bar so it doesn't lose focus while typing
+  const [searchInput, setSearchInput] = useState(search);
+
   useEffect(() => {
-    fetch('/api/categories')
+    setSearchInput(search);
+  }, [search]);
+
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`)
       .then(r => r.json())
       .then(d => setCategories(d.categories ?? []));
   }, []);
@@ -36,7 +43,7 @@ function ProductsContent() {
     if (search) params.set('search', search);
     if (sort) params.set('sort', sort);
 
-    fetch(`/api/products?${params.toString()}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products?${params.toString()}`)
       .then(r => r.json())
       .then(d => setProducts(d.products ?? []))
       .finally(() => setLoading(false));
@@ -49,23 +56,31 @@ function ProductsContent() {
     router.push(`/products?${params.toString()}`);
   };
 
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      updateParam('search', searchInput);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-white-900 mb-8">All Products</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">All Products</h1>
 
       {/* Filters bar */}
       <div className="flex flex-col sm:flex-row gap-3 mb-8">
         <input
           type="text"
-          placeholder="Search products..."
-          defaultValue={search}
-          onChange={e => updateParam('search', e.target.value)}
-          className="flex-1 px-4 py-2 border border-black-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400"
+          placeholder="Search products... (Press Enter)"
+          value={searchInput}
+          onChange={e => setSearchInput(e.target.value)}
+          onKeyDown={handleSearchKeyDown}
+          onBlur={() => updateParam('search', searchInput)}
+          className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-indigo-400 bg-white"
         />
         <select
           value={category}
           onChange={e => updateParam('category', e.target.value)}
-          className="px-4 py-2 border border-black-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400 bg-white"
+          className="px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-indigo-400 bg-white"
         >
           <option value="">All Categories</option>
           {categories.map(cat => (
@@ -75,7 +90,7 @@ function ProductsContent() {
         <select
           value={sort}
           onChange={e => updateParam('sort', e.target.value)}
-          className="px-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400 bg-white"
+          className="px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-indigo-400 bg-white"
         >
           <option value="">Sort: Newest</option>
           <option value="price-asc">Price: Low to High</option>
@@ -101,7 +116,7 @@ function ProductsContent() {
           {products.map(product => (
             <Link
               key={product._id}
-              href={`/products/${product._id}`}
+              href={`${process.env.NEXT_PUBLIC_API_URL}/products/${product._id}`}
               className="group bg-white rounded-2xl overflow-hidden border border-gray-100 hover:shadow-md transition-shadow"
             >
               <div className="aspect-square bg-gray-50 overflow-hidden">
