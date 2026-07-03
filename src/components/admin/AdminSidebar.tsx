@@ -25,7 +25,7 @@ export default function AdminSidebar() {
       <div className="px-6 py-5 border-b border-gray-800">
         <Link href="/">
           <span className="text-lg font-bold text-white">
-            Shop<span className="text-indigo-400">.</span>
+            E-Shop<span className="text-indigo-400">.</span>
           </span>
         </Link>
         <p className="text-gray-500 text-xs mt-0.5 font-medium uppercase tracking-wider">
