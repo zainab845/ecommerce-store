@@ -71,7 +71,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Categories */}
+   {/* Categories */}
       {categories.length > 0 && (
         <section className="py-16 px-4">
           <div className="max-w-7xl mx-auto">
@@ -82,7 +82,8 @@ export default async function HomePage() {
               {categories.map((cat) => (
                 <Link
                   key={cat._id}
-                  href={`/categories/${cat.slug}`}
+                  // FIX: Point to the products page with the category query param
+                  href={`/products?category=${cat.slug}`}
                   className="group relative overflow-hidden rounded-2xl bg-gray-100 aspect-square flex items-end p-4 hover:shadow-md transition-shadow"
                 >
                   {cat.image && (
