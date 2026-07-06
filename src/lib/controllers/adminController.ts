@@ -1,6 +1,59 @@
 import connectToDatabase from '@/lib/db';
+import Order from '@/lib/models/Order';
 import Product from '@/lib/models/Product';
+import User from '@/lib/models/User';
 import Category from '@/lib/models/Category';
+
+// === Orders ===
+export async function getAllOrders() {
+  await connectToDatabase();
+  return await Order.find()
+    .populate('user', 'name email')
+    .populate('items.product', 'name price')
+    .sort({ createdAt: -1 });
+}
+
+export async function getOrderById(id: string) {
+  await connectToDatabase();
+  return await Order.findById(id)
+    .populate('user', 'name email')
+    .populate('items.product');
+}
+
+export async function updateOrderStatus(id: string, status: 'Pending' | 'Accepted' | 'Paid' | 'Cancelled') {
+  await connectToDatabase();
+  return await Order.findByIdAndUpdate(
+    id, 
+    { status, updatedAt: new Date() },
+    { new: true }
+  );
+}
+
+// === Dashboard Stats ===
+export async function getDashboardStats() {
+  await connectToDatabase();
+
+  const [totalOrders, totalRevenue, totalUsers, totalProducts] = await Promise.all([
+    Order.countDocuments(),
+    Order.aggregate([{ $match: { status: 'Paid' } }, { $group: { _id: null, total: { $sum: '$totalAmount' } } }]),
+    User.countDocuments(),
+    Product.countDocuments(),
+  ]);
+
+  const recentOrders = await Order.find()
+    .populate('user', 'name email')
+    .sort({ createdAt: -1 })
+    .limit(5);
+
+  return {
+    totalOrders,
+    totalRevenue: totalRevenue[0]?.total || 0,
+    totalUsers,
+    totalProducts,
+    recentOrders
+  };
+}
+
 
 function toSlug(name: string): string {
   return name

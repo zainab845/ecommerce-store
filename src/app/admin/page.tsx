@@ -1,67 +1,95 @@
 import Link from 'next/link';
-import connectToDatabase from '@/lib/db';
-import Product from '@/lib/models/Product';
-import Category from '@/lib/models/Category';
+import { getDashboardStats } from '@/lib/controllers/adminController';
+
+function OrdersTable() {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-6">
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-left text-sm">
+          <thead className="border-b">
+            <tr>
+              <th className="py-3 font-medium text-gray-500">Order ID</th>
+              <th className="py-3 font-medium text-gray-500">Customer</th>
+              <th className="py-3 font-medium text-gray-500">Amount</th>
+              <th className="py-3 font-medium text-gray-500">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="py-3 text-gray-600">-</td>
+              <td className="py-3 text-gray-600">-</td>
+              <td className="py-3 text-gray-600">-</td>
+              <td className="py-3 text-gray-600">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
 async function getStats() {
-  await connectToDatabase();
-  const [products, categories, featured, lowStock] = await Promise.all([
-    Product.countDocuments(),
-    Category.countDocuments(),
-    Product.countDocuments({ isFeatured: true }),
-    Product.countDocuments({ stock: { $lt: 5 } }),
-  ]);
-  return { products, categories, featured, lowStock };
+  const data = await getDashboardStats();
+  return data;
 }
 
 export default async function AdminDashboard() {
-  const stats = await getStats();
-
-  const cards = [
-    { label: 'Total Products', value: stats.products, href: '/admin/products', bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-100' },
-    { label: 'Categories', value: stats.categories, href: '/admin/categories', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-100' },
-    { label: 'Featured', value: stats.featured, href: '/admin/products', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-100' },
-    { label: 'Low Stock', value: stats.lowStock, href: '/admin/products', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-100' },
-  ];
+  const { totalOrders, totalRevenue, totalUsers, totalProducts, recentOrders } = await getStats();
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500 mt-1 text-sm">Overview of your store</p>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+        <p className="text-gray-500 mt-1">Welcome back! Here's what's happening in your store.</p>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-10">
-        {cards.map(card => (
-          <Link
-            key={card.label}
-            href={card.href}
-            className={`rounded-2xl border ${card.border} ${card.bg} p-6 hover:shadow-sm transition-shadow`}
-          >
-            <p className={`text-sm font-medium ${card.text} opacity-80`}>{card.label}</p>
-            <p className={`text-4xl font-bold ${card.text} mt-2`}>{card.value}</p>
-          </Link>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[
+          { label: 'Total Revenue', value: `$${totalRevenue.toFixed(2)}`, color: 'text-emerald-600' },
+          { label: 'Total Orders', value: totalOrders, color: 'text-blue-600' },
+          { label: 'Total Users', value: totalUsers, color: 'text-violet-600' },
+          { label: 'Total Products', value: totalProducts, color: 'text-amber-600' },
+        ].map((stat, i) => (
+          <div key={i} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+            <p className="text-sm text-gray-500">{stat.label}</p>
+            <p className={`text-4xl font-bold mt-2 ${stat.color}`}>{stat.value}</p>
+          </div>
         ))}
       </div>
 
-      {/* Quick actions */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6 max-w-sm">
-        <h2 className="font-bold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="space-y-2">
-          {[
-            { label: '+ Add New Product', href: '/admin/products/new' },
-            { label: '+ Add New Category', href: '/admin/categories' },
-            { label: '↗ View Store', href: '/' },
-          ].map(action => (
-            <Link
-              key={action.href}
-              href={action.href}
-              className="flex items-center p-3 rounded-xl bg-gray-50 hover:bg-indigo-50 hover:text-indigo-700 transition-colors text-sm font-medium text-gray-700"
-            >
-              {action.label}
+      {/* Recent Orders + All Orders */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Recent Orders */}
+        <div className="lg:col-span-1 bg-white rounded-2xl border border-gray-100 p-6">
+          <h2 className="font-semibold text-lg mb-4">Recent Orders</h2>
+          <div className="space-y-4">
+            {recentOrders.map((order: any) => (
+              <div key={order._id} className="flex justify-between items-center text-sm">
+                <div>
+                  <p className="font-medium">{order.user?.name || 'Customer'}</p>
+                  <p className="text-gray-500">${order.totalAmount}</p>
+                </div>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  order.status === 'Paid' ? 'bg-emerald-100 text-emerald-700' :
+                  order.status === 'Accepted' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'
+                }`}>
+                  {order.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* All Orders Table */}
+        <div className="lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-lg">All Orders</h2>
+            <Link href="/admin/orders" className="text-indigo-600 hover:underline text-sm">
+              View All →
             </Link>
-          ))}
+          </div>
+          <OrdersTable />
         </div>
       </div>
     </div>
