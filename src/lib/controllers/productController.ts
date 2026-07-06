@@ -12,29 +12,34 @@ export async function getAllProducts(searchParams: {
 }) {
   await connectToDatabase();
 
-  const query: Record<string, unknown> = {};
+  const query: Record<string, any> = {};
 
+  // Category filter
   if (searchParams.category) {
     const cat = await Category.findOne({ slug: searchParams.category });
     if (cat) query.category = cat._id;
   }
 
+  // Text search (much faster with text index)
   if (searchParams.search) {
-    query.name = { $regex: searchParams.search, $options: 'i' };
+    query.$text = { $search: searchParams.search };
   }
 
+  // Featured products
   if (searchParams.featured === 'true') {
     query.isFeatured = true;
   }
 
+  // Sorting
   let sortOption: Record<string, 1 | -1> = { createdAt: -1 };
   if (searchParams.sort === 'price-asc') sortOption = { price: 1 };
   if (searchParams.sort === 'price-desc') sortOption = { price: -1 };
   if (searchParams.sort === 'name') sortOption = { name: 1 };
 
-  const limit = typeof searchParams.limit === 'number'
-    ? searchParams.limit
-    : parseInt(searchParams.limit ?? '12');
+  const limit = typeof searchParams.limit === 'number' 
+    ? searchParams.limit 
+    : parseInt(String(searchParams.limit ?? '12'));
+
   const page = searchParams.page ?? 1;
   const skip = (page - 1) * limit;
 
@@ -53,12 +58,10 @@ export async function getAllProducts(searchParams: {
 
 export async function getProductById(id: string) {
   await connectToDatabase();
-  const product = await Product.findById(id).populate('category', 'name slug');
-  return product;
+  return Product.findById(id).populate('category', 'name slug');
 }
 
 export async function getAllCategories() {
   await connectToDatabase();
-  const categories = await Category.find().sort({ name: 1 });
-  return categories;
+  return Category.find().sort({ name: 1 });
 }
