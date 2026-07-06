@@ -13,6 +13,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  setUser: (user: User | null) => void;
   logout: () => void;
 }
 
@@ -24,7 +25,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Check if user is logged in by hitting a /api/auth/me route
     fetch('/api/auth/me')
       .then(res => res.ok ? res.json() : null)
       .then(data => setUser(data?.user ?? null))
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, logout }}>
+    <AuthContext.Provider value={{ user, loading, setUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

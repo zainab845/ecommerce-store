@@ -14,6 +14,11 @@ const navLinks = [
   { label: 'Contact', href: '/contact' },
 ];
 
+function isActive(pathname: string, href: string): boolean {
+  if (href === '/') return pathname === '/';
+  return pathname.startsWith(href);
+}
+
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -30,7 +35,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex-shrink-0">
             <span className="text-xl font-bold text-gray-900 tracking-tight">
-               E-Shop<span className="text-indigo-600">.</span>
+              E-Shop<span className="text-indigo-600">.</span>
             </span>
           </Link>
 
@@ -41,7 +46,7 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  pathname === link.href
+                  isActive(pathname, link.href)
                     ? 'text-indigo-600 bg-indigo-50'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
@@ -54,7 +59,7 @@ export default function Navbar() {
           {/* Right side icons */}
           <div className="flex items-center gap-1">
 
-            {/* Wishlist icon */}
+            {/* Wishlist */}
             <Link
               href="/wishlist"
               className="relative p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
@@ -71,7 +76,7 @@ export default function Navbar() {
               )}
             </Link>
 
-            {/* Cart icon */}
+            {/* Cart — proper shopping cart icon */}
             <Link
               href="/cart"
               className="relative p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
@@ -79,7 +84,7 @@ export default function Navbar() {
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                  d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
               {cartCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-indigo-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
@@ -146,7 +151,7 @@ export default function Navbar() {
               </div>
             )}
 
-            {/* Hamburger — mobile only */}
+            {/* Hamburger */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
@@ -166,7 +171,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile menu dropdown */}
+      {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden border-t border-gray-100 bg-white">
           <div className="px-4 py-3 space-y-1">
@@ -176,7 +181,7 @@ export default function Navbar() {
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
                 className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  pathname === link.href
+                  isActive(pathname, link.href)
                     ? 'text-indigo-600 bg-indigo-50'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
