@@ -7,7 +7,8 @@ export async function getAllProducts(searchParams: {
   search?: string;
   sort?: string;
   featured?: string;
-  limit?: string;
+  limit?: string | number;
+  page?: number;
 }) {
   await connectToDatabase();
 
@@ -31,14 +32,23 @@ export async function getAllProducts(searchParams: {
   if (searchParams.sort === 'price-desc') sortOption = { price: -1 };
   if (searchParams.sort === 'name') sortOption = { name: 1 };
 
-  const limit = parseInt(searchParams.limit ?? '100');
+  const limit = typeof searchParams.limit === 'number'
+    ? searchParams.limit
+    : parseInt(searchParams.limit ?? '12');
+  const page = searchParams.page ?? 1;
+  const skip = (page - 1) * limit;
 
-  const products = await Product.find(query)
-    .populate('category', 'name slug')
-    .sort(sortOption)
-    .limit(limit);
+  const [products, totalCount] = await Promise.all([
+    Product.find(query)
+      .populate('category', 'name slug')
+      .sort(sortOption)
+      .skip(skip)
+      .limit(limit)
+      .select('name slug price originalPrice images category stock isFeatured'),
+    Product.countDocuments(query),
+  ]);
 
-  return products;
+  return { products, totalCount };
 }
 
 export async function getProductById(id: string) {
