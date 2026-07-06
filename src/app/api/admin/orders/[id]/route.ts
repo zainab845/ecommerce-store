@@ -4,13 +4,15 @@ import { getOrderById, updateOrderStatus } from '@/lib/controllers/adminControll
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const order = await getOrderById(params.id);
+    const { id } = await params;
+    const order = await getOrderById(id);
+    
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
@@ -22,14 +24,16 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
+    const { id } = await params;
     const { status } = await request.json();
-    const updatedOrder = await updateOrderStatus(params.id, status);
+
+    const updatedOrder = await updateOrderStatus(id, status);
     
     if (!updatedOrder) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
