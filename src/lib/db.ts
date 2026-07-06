@@ -3,23 +3,40 @@ import mongoose from 'mongoose';
 const MONGODB_URI = process.env.MONGODB_URI!;
 
 if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable');
+  throw new Error('MONGODB_URI environment variable is not set');
 }
 
-let cached = (global as any).mongoose;
+// Cache the connection across hot reloads and serverless invocations
+const globalWithMongoose = global as typeof globalThis & {
+  mongoose: { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null };
+};
 
-if (!cached) {
-  cached = (global as any).mongoose = { conn: null, promise: null };
+if (!globalWithMongoose.mongoose) {
+  globalWithMongoose.mongoose = { conn: null, promise: null };
 }
 
-export async function connectToDatabase() {
+const cached = globalWithMongoose.mongoose;
+
+async function dbConnect() {
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI).then((mongoose) => {
-      return mongoose;
-    });
+    cached.promise = mongoose.connect(MONGODB_URI, {
+      bufferCommands: false,
+      maxPoolSize: 10,         // Reuse up to 10 connections
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+    }).then(m => m);
   }
-  cached.conn = await cached.promise;
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (err) {
+    cached.promise = null;
+    throw err;
+  }
+
   return cached.conn;
 }
+
+export default dbConnect;

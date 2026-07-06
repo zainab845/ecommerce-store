@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { connectToDatabase } from '@/lib/db';
+import connectToDatabase from '@/lib/db';
 import Product from '@/lib/models/Product';
 import Category from '@/lib/models/Category';
 
