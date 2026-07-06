@@ -1,48 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/auth';
-import { createProduct } from '@/lib/controllers/adminController';
 import { getAllProducts } from '@/lib/controllers/productController';
 
-export async function GET() {
-  const admin = await requireAdmin();
-  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+export async function GET(request: NextRequest) {
   try {
-    const products = await getAllProducts({});
-    return NextResponse.json({ products });
-  } catch {
-    return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
-  }
-}
+    const { searchParams } = new URL(request.url);
 
-export async function POST(request: NextRequest) {
-  const admin = await requireAdmin();
-  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const page = parseInt(searchParams.get('page') ?? '1');
+    const limit = parseInt(searchParams.get('limit') ?? '12');
 
-  try {
-    const body = await request.json();
-    const { name, description, price, originalPrice, images, category, stock, isFeatured } = body;
-
-    if (!name || !description || !price || !category) {
-      return NextResponse.json(
-        { error: 'Name, description, price and category are required' },
-        { status: 400 }
-      );
-    }
-
-    const product = await createProduct({
-      name,
-      description,
-      price: Number(price),
-      originalPrice: originalPrice ? Number(originalPrice) : undefined,
-      images: Array.isArray(images) ? images : [],
-      category,
-      stock: Number(stock) || 0,
-      isFeatured: Boolean(isFeatured),
+    const result = await getAllProducts({
+      category: searchParams.get('category') ?? undefined,
+      search: searchParams.get('search') ?? undefined,
+      sort: searchParams.get('sort') ?? undefined,
+      featured: searchParams.get('featured') ?? undefined,
+      limit: String(limit),
+      page,
     });
 
-    return NextResponse.json({ product }, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
+    // Make sure we always return consistent shape
+    return NextResponse.json({
+      products: Array.isArray(result.products) ? result.products : [],
+      pagination: {
+        page,
+        totalPages: Math.ceil((result.totalCount || 0) / limit),
+        totalCount: result.totalCount || 0,
+      }
+    });
+  } catch (error) {
+    console.error("API Route Error:", error);
+    return NextResponse.json(
+      { error: 'Failed to fetch products', products: [], pagination: { page: 1, totalPages: 1, totalCount: 0 } },
+      { status: 500 }
+    );
   }
 }

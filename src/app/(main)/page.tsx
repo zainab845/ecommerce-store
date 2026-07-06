@@ -12,7 +12,9 @@ async function getFeaturedProducts(): Promise<Product[]> {
     );
     if (!res.ok) return [];
     const data = await res.json();
-    return data.products ?? [];
+    
+    // STRICT ARRAY CHECK: prevents the .map is not a function error
+    return Array.isArray(data?.products) ? data.products : [];
   } catch {
     return [];
   }
@@ -29,7 +31,9 @@ async function getCategories(): Promise<Category[]> {
     );
     if (!res.ok) return [];
     const data = await res.json();
-    return data.categories ?? [];
+    
+    // STRICT ARRAY CHECK: prevents the .map is not a function error
+    return Array.isArray(data?.categories) ? data.categories : [];
   } catch {
     return [];
   }
@@ -71,7 +75,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-   {/* Categories */}
+      {/* Categories */}
       {categories.length > 0 && (
         <section className="py-16 px-4">
           <div className="max-w-7xl mx-auto">
@@ -82,7 +86,6 @@ export default async function HomePage() {
               {categories.map((cat) => (
                 <Link
                   key={cat._id}
-                  // FIX: Point to the products page with the category query param
                   href={`/products?category=${cat.slug}`}
                   className="group relative overflow-hidden rounded-2xl bg-gray-100 aspect-square flex items-end p-4 hover:shadow-md transition-shadow"
                 >
