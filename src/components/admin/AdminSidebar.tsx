@@ -13,11 +13,11 @@ export default function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
-    router.refresh();
-  };
+ const handleLogout = async () => {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  router.push('/admin/login');
+  router.refresh();
+};
 
   return (
     <aside className="w-60 bg-gray-900 min-h-screen flex flex-col flex-shrink-0">
