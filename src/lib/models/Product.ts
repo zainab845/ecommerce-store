@@ -32,12 +32,11 @@ const ProductSchema = new Schema<IProduct>(
   { timestamps: true }
 );
 
-ProductSchema.index({ name: 'text' });              // enables $regex search on name
-ProductSchema.index({ category: 1 });               // filtering by category
-ProductSchema.index({ isFeatured: 1 });             // home page featured query
-ProductSchema.index({ price: 1 });                  // price sort
-ProductSchema.index({ createdAt: -1 });             // default newest sort
-
+ProductSchema.index({ name: 'text', description: 'text' }); // for search
+ProductSchema.index({ category: 1 });
+ProductSchema.index({ isFeatured: 1 });
+ProductSchema.index({ price: 1 });
+ProductSchema.index({ createdAt: -1 });
 
 export default mongoose.models.Product ||
   mongoose.model<IProduct>('Product', ProductSchema);
