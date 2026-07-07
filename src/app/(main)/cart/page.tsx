@@ -10,13 +10,49 @@ export default function CartPage() {
   const [placingOrder, setPlacingOrder] = useState(false);
 
   const handlePlaceOrder = async () => {
-    setPlacingOrder(true);
-    // Simulate a short processing delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    clearCart();
-    setOrderPlaced(true);
+  setPlacingOrder(true);
+
+  try {
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: items.map(item => ({
+          product: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity
+        })),
+        totalAmount: totalPrice,
+        shippingAddress: {
+          fullName: "Test User", 
+          address: "123 Test Street",
+          city: "Test City",
+          phone: "1234567890"
+        }
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.orderId) {
+      localStorage.setItem('lastOrderId', data.orderId);
+      clearCart();
+      setOrderPlaced(true);
+
+      // Optional: redirect to checkout after a delay
+      setTimeout(() => {
+        window.location.href = `/checkout/${data.orderId}`;
+      }, 1500);
+    } else {
+      alert(data.error || 'Failed to place order');
+    }
+  } catch (err) {
+    alert('Something went wrong. Please try again.');
+  } finally {
     setPlacingOrder(false);
-  };
+  }
+};
 
   // Order success screen
   if (orderPlaced) {
