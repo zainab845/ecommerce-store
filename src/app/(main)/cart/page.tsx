@@ -25,7 +25,7 @@ export default function CartPage() {
         })),
         totalAmount: totalPrice,
         shippingAddress: {
-          fullName: "Test User", // Replace with real form later
+          fullName: "Test User", 
           address: "123 Test Street",
           city: "Test City",
           phone: "1234567890"
