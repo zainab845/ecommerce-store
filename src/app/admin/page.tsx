@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getDashboardStats } from '@/lib/controllers/adminController';
+import NotificationBell from './NotificationBell';
 
 function OrdersTable() {
   return (
@@ -38,9 +39,12 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-500 mt-1">Welcome back! Here's what's happening in your store.</p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-500 mt-1 text-sm">Overview of your store</p>
+        </div>
+        <NotificationBell />
       </div>
 
       {/* Stats Cards */}

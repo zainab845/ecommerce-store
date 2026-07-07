@@ -3,6 +3,7 @@ import Order from '@/lib/models/Order';
 import Product from '@/lib/models/Product';
 import User from '@/lib/models/User';
 import Category from '@/lib/models/Category';
+import NotificationModel from '@/lib/models/Notification';
 
 // === Orders ===
 export async function getAllOrders() {
@@ -142,4 +143,26 @@ export async function updateCategory(
 export async function deleteCategory(id: string) {
   await connectToDatabase();
   await Category.findByIdAndDelete(id);
+}
+// === Notifications ===
+export async function createNotification(data: {
+  type: 'new_order' | 'order_status_change' | 'contact_form';
+  title: string;
+  message: string;
+  orderId?: string;
+}) {
+  await connectToDatabase();
+  return await NotificationModel.create(data);
+}
+
+export async function getNotifications() {
+  await connectToDatabase();
+  return await NotificationModel.find()
+    .sort({ createdAt: -1 })
+    .limit(20);
+}
+
+export async function markNotificationAsRead(id: string) {
+  await connectToDatabase();
+  return await NotificationModel.findByIdAndUpdate(id, { read: true }, { new: true });
 }
