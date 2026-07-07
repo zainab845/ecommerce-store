@@ -20,7 +20,7 @@ export async function getAllProducts(searchParams: {
     if (cat) query.category = cat._id;
   }
 
-  // Text search (much faster with text index)
+  // Text search 
   if (searchParams.search) {
     query.$text = { $search: searchParams.search };
   }
