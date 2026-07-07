@@ -7,19 +7,12 @@ const OrderSchema = new mongoose.Schema({
     required: true
   },
   items: [{
-    product: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Product',
-      required: true
-    },
+    product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
     name: String,
     price: Number,
     quantity: Number,
   }],
-  totalAmount: {
-    type: Number,
-    required: true
-  },
+  totalAmount: { type: Number, required: true },
   status: {
     type: String,
     enum: ['Pending', 'Accepted', 'Paid', 'Cancelled'],
@@ -30,17 +23,16 @@ const OrderSchema = new mongoose.Schema({
     address: String,
     city: String,
     phone: String,
-    location: {
-      lat: Number,
-      lng: Number
-    }
+    location: { lat: Number, lng: Number }
   },
-  paymentIntentId: String,   // For Stripe
+  paymentIntentId: String,
+  paymentStatus: { 
+    type: String, 
+    enum: ['pending', 'succeeded', 'failed'], 
+    default: 'pending' 
+  },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
-
-OrderSchema.index({ user: 1, status: 1 });
-OrderSchema.index({ createdAt: -1 });
 
 export default mongoose.models.Order || mongoose.model('Order', OrderSchema);

@@ -56,6 +56,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             ))}
           </nav>
         </div>
+
+        {/* Bottom Section - Back to Store + Logout */}
+        <div className="absolute bottom-6 left-6 right-6">
+          <div className="space-y-2">
+            <Link
+              href="/"
+              className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+            >
+              ← Back to Store
+            </Link>
+
+            <button
+              onClick={() => {
+                document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
+                window.location.href = '/';
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-red-400 hover:bg-red-950 hover:text-red-300 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Overlay for mobile */}

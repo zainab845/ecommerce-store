@@ -15,9 +15,24 @@ export async function getAllOrders() {
 
 export async function getOrderById(id: string) {
   await connectToDatabase();
-  return await Order.findById(id)
+  
+  try {
+    // Try as full ObjectId
+    const order = await Order.findById(id)
+      .populate('user', 'name email')
+      .populate('items.product');
+    
+    if (order) return order;
+  } catch (e) {
+    // Ignore cast error and try fallback
+  }
+
+  // Fallback for shortened ID
+  const orders = await Order.find()
     .populate('user', 'name email')
     .populate('items.product');
+
+  return orders.find(o => o._id.toString().includes(id)) || null;
 }
 
 export async function updateOrderStatus(id: string, status: 'Pending' | 'Accepted' | 'Paid' | 'Cancelled') {
