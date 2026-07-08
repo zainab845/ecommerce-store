@@ -25,10 +25,9 @@ export async function middleware(request: NextRequest) {
           return NextResponse.redirect(new URL('/admin', request.url));
         }
       }
-      return NextResponse.next(); // Allow access to login page
+      return NextResponse.next();
     }
 
-    // Protect all other admin routes
     if (!token) {
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
@@ -39,7 +38,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  //USER ROUTES 
+  // === USER ROUTES ===
   if (pathname === '/login' || pathname === '/signup') {
     if (token) {
       const payload = await getPayload(token);
@@ -54,5 +53,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/login', '/signup'],
+  matcher: [
+    '/admin/:path*', 
+    '/login', 
+    '/signup',
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 };

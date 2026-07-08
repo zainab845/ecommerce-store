@@ -33,6 +33,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Prevent admin login from user login API
+    if (user.role === 'admin') {
+      return NextResponse.json(
+        { error: 'Please use the Admin Login page to access admin panel.' },
+        { status: 401 }
+      );
+    }
+
     const token = jwt.sign(
       { id: user._id, name: user.name, email: user.email, role: user.role },
       process.env.JWT_SECRET!,
