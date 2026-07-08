@@ -39,7 +39,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // === USER ROUTES ===
+  //USER ROUTES 
   if (pathname === '/login' || pathname === '/signup') {
     if (token) {
       const payload = await getPayload(token);
