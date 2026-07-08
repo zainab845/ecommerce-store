@@ -15,12 +15,8 @@ export async function POST(request: NextRequest) {
 
     const user = await User.findOne({ email: email.toLowerCase() });
 
-    // Only allow admin role through this endpoint
     if (!user || user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'No admin account found with this email' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
     const isValid = await bcrypt.compare(password, user.password);
@@ -48,7 +44,8 @@ export async function POST(request: NextRequest) {
     });
 
     return response;
-  } catch {
+  } catch (error) {
+    console.error(error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
