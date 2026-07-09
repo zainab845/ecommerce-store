@@ -52,7 +52,7 @@ export default function AdminLoginPage() {
           <span className="text-2xl font-bold text-white">
             E-Shop<span className="text-indigo-400">.</span>
           </span>
-          <div className="mt-2 inline-flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium px-3 py-1 rounded-full">
+          <div className="mt-3 inline-flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium px-3 py-1 rounded-full">
             Admin Portal
           </div>
           <h1 className="text-2xl font-bold text-white mt-5">Admin Sign In</h1>
@@ -66,17 +66,29 @@ export default function AdminLoginPage() {
               <label className="block text-sm font-medium text-gray-300 mb-1.5">
                 Admin Email
               </label>
-              <input name="email" type="email" autoComplete="email"
-                placeholder="admin@yourdomain.com" value={form.email}
-                onChange={handleChange} className={inputClass} />
+              <input
+                name="email"
+                type="email"
+                autoComplete="email"
+                placeholder="admin@yourdomain.com"
+                value={form.email}
+                onChange={handleChange}
+                className={inputClass}
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1.5">
                 Password
               </label>
-              <input name="password" type="password" autoComplete="current-password"
-                placeholder="Enter your password" value={form.password}
-                onChange={handleChange} className={inputClass} />
+              <input
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                placeholder="Enter your password"
+                value={form.password}
+                onChange={handleChange}
+                className={inputClass}
+              />
             </div>
 
             {error && (
@@ -85,8 +97,11 @@ export default function AdminLoginPage() {
               </div>
             )}
 
-            <button type="submit" disabled={loading}
-              className="w-full py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-500 transition-colors disabled:opacity-60 text-sm mt-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-500 transition-colors disabled:opacity-60 text-sm mt-2"
+            >
               {loading ? 'Signing in...' : 'Sign in to Admin Panel'}
             </button>
           </form>

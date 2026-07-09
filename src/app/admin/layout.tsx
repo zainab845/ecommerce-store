@@ -8,6 +8,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Skip the sidebar layout entirely for the admin login page
+  if (pathname === '/admin/login') {
+    return <>{children}</>;
+  }
+
   const navLinks = [
     { href: '/admin', label: 'Dashboard', icon: '□' },
     { href: '/admin/products', label: 'Products', icon: '▦' },
@@ -45,8 +50,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 key={link.href}
                 href={link.href}
                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all ${
-                  pathname === link.href 
-                    ? 'bg-indigo-600 text-white shadow-md' 
+                  pathname === link.href
+                    ? 'bg-indigo-600 text-white shadow-md'
                     : 'hover:bg-gray-800 text-gray-400 hover:text-white'
                 }`}
                 onClick={() => setSidebarOpen(false)}
@@ -58,7 +63,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </nav>
         </div>
 
-        {/* Bottom Section - Back to Store + Logout */}
+        {/* Bottom Section */}
         <div className="absolute bottom-6 left-6 right-6">
           <div className="space-y-2">
             <Link
@@ -71,7 +76,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <button
               onClick={() => {
                 document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
-                window.location.href = '/';
+                window.location.href = '/admin/login';
               }}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-red-400 hover:bg-red-950 hover:text-red-300 transition-colors"
             >
@@ -83,7 +88,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Overlay for mobile */}
       {sidebarOpen && (
-        <div 
+        <div
           className="lg:hidden fixed inset-0 bg-black/50 z-30"
           onClick={() => setSidebarOpen(false)}
         />

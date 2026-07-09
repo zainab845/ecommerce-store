@@ -1,16 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
-export default function LoginPage() {
+function LoginForm() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { setUser } = useAuth();
+
+  // Where to go after login — defaults to home
+  const from = searchParams.get('from') || '/';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -34,14 +38,16 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');
 
-      // Update auth state immediately — no refresh needed
       setUser(data.user);
 
+      // Block admin from using user login page
       if (data.user?.role === 'admin') {
-        router.push('/admin');
-      } else {
-        router.push('/');
+        setError('Please use the Admin Login page.');
+        return;
       }
+
+      // Redirect back to where they came from (e.g. /cart)
+      router.push(from);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
@@ -62,7 +68,11 @@ export default function LoginPage() {
             </span>
           </Link>
           <h1 className="text-2xl font-bold text-gray-900 mt-6">Welcome back</h1>
-          <p className="text-gray-500 mt-2 text-sm">Sign in to your account to continue</p>
+          <p className="text-gray-500 mt-2 text-sm">
+            {from === '/cart'
+              ? 'Sign in to complete your order'
+              : 'Sign in to your account to continue'}
+          </p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
@@ -92,7 +102,8 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-gray-500 mt-6">
             Don&apos;t have an account?{' '}
-            <Link href="/signup" className="font-semibold text-indigo-600 hover:text-indigo-700">
+            <Link href={`/signup${from !== '/' ? `?from=${from}` : ''}`}
+              className="font-semibold text-indigo-600 hover:text-indigo-700">
               Create one free
             </Link>
           </p>
@@ -103,5 +114,18 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+// useSearchParams requires Suspense in Next.js App Router
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

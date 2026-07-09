@@ -16,34 +16,29 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('token')?.value;
 
-  // Skip middleware for the admin login page itself
-  if (pathname === '/admin/login') {
-    // If already logged in as admin, redirect to dashboard
-    if (token) {
-      const payload = await getPayload(token);
-      if (payload?.role === 'admin') {
-        return NextResponse.redirect(new URL('/admin', request.url));
-      }
-    }
-    return NextResponse.next();
-  }
-
-  // Protect all other /admin routes
+  // === ADMIN ROUTES ===
   if (pathname.startsWith('/admin')) {
+    if (pathname === '/admin/login') {
+      if (token) {
+        const payload = await getPayload(token);
+        if (payload?.role === 'admin') {
+          return NextResponse.redirect(new URL('/admin', request.url));
+        }
+      }
+      return NextResponse.next();
+    }
+
     if (!token) {
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
+
     const payload = await getPayload(token);
-    if (!payload) {
-      return NextResponse.redirect(new URL('/admin/login', request.url));
-    }
-    if (payload.role !== 'admin') {
-      // Logged in as regular user — send to store home
+    if (!payload || payload.role !== 'admin') {
       return NextResponse.redirect(new URL('/', request.url));
     }
   }
 
-  // Redirect logged-in users away from /login and /signup
+  // === USER ROUTES ===
   if (pathname === '/login' || pathname === '/signup') {
     if (token) {
       const payload = await getPayload(token);
@@ -58,5 +53,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/login', '/signup'],
+  matcher: [
+    '/admin/:path*', 
+    '/login', 
+    '/signup',
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 };
