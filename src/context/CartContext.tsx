@@ -22,7 +22,8 @@ type CartAction =
 
 interface CartContextType {
   items: CartItem[];
-  totalItems: number;
+  totalItems: number;     // total quantity — used in cart page display
+  uniqueItems: number;    // unique product count — used in navbar badge
   totalPrice: number;
   addItem: (item: CartItem) => void;
   removeItem: (id: string) => void;
@@ -67,7 +68,6 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, { items: [] });
 
-  // Load from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('cart');
     if (saved) {
@@ -76,22 +76,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Save to localStorage on change
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(state.items));
   }, [state.items]);
 
   const totalItems = state.items.reduce((sum, i) => sum + i.quantity, 0);
+  const uniqueItems = state.items.length; // unique product count for badge
   const totalPrice = state.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   return (
     <CartContext.Provider value={{
       items: state.items,
       totalItems,
+      uniqueItems,
       totalPrice,
       addItem: (item) => dispatch({ type: 'ADD_ITEM', payload: item }),
       removeItem: (id) => dispatch({ type: 'REMOVE_ITEM', payload: id }),
-      updateQuantity: (id, quantity) => dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } }),
+      updateQuantity: (id, quantity) =>
+        dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } }),
       clearCart: () => dispatch({ type: 'CLEAR_CART' }),
     }}>
       {children}
