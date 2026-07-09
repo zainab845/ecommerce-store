@@ -23,7 +23,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const pathname = usePathname();
-  const { totalItems: cartCount } = useCart();
+ const { uniqueItems: cartCount } = useCart();
   const { totalItems: wishlistCount } = useWishlist();
   const { user, loading, logout } = useAuth();
 
