@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const userId = payload.id as string;
     const userName = (payload.name as string) || 'Customer';
 
-    const { items, totalAmount } = await request.json();
+    const { items, totalAmount, shippingAddress } = await request.json();
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
@@ -26,8 +26,6 @@ export async function POST(request: NextRequest) {
 
     await dbConnect();
 
-    // Create order in DB first with Pending status
-    // Order becomes Paid only after webhook confirms payment
     const order = await Order.create({
       user: userId,
       items,
@@ -35,7 +33,7 @@ export async function POST(request: NextRequest) {
       status: 'Pending',
       shippingAddress: {
         fullName: userName,
-        address: 'To be provided',
+        address: shippingAddress || 'Not provided',
         city: 'To be provided',
         phone: 'To be provided',
       },
@@ -43,7 +41,6 @@ export async function POST(request: NextRequest) {
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-    // Create Stripe Checkout Session — Stripe hosts the payment page
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: items.map((item: {
@@ -58,12 +55,11 @@ export async function POST(request: NextRequest) {
             name: item.name,
             ...(item.image ? { images: [item.image] } : {}),
           },
-          unit_amount: Math.round(item.price * 100), // Stripe uses cents
+          unit_amount: Math.round(item.price * 100),
         },
         quantity: item.quantity,
       })),
       mode: 'payment',
-      // {CHECKOUT_SESSION_ID} is a Stripe template variable — it fills in automatically
       success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/checkout/cancel`,
       metadata: {
@@ -72,7 +68,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Save session ID so we can look up the order from webhook
     order.stripeSessionId = session.id;
     await order.save();
 
