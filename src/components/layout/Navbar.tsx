@@ -23,7 +23,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const pathname = usePathname();
- const { uniqueItems: cartCount } = useCart();
+  const { uniqueItems: cartCount } = useCart();
   const { totalItems: wishlistCount } = useWishlist();
   const { user, loading, logout } = useAuth();
 
@@ -122,6 +122,14 @@ export default function Navbar() {
                             Admin Panel
                           </Link>
                         )}
+                        {/* NEW: Desktop My Orders Link */}
+                        <Link
+                          href="/orders"
+                          onClick={() => setProfileOpen(false)}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          My Orders
+                        </Link>
                         <hr className="my-1 border-gray-100" />
                         <button
                           onClick={() => { setProfileOpen(false); logout(); }}
@@ -207,6 +215,14 @@ export default function Navbar() {
                       Admin Panel
                     </Link>
                   )}
+                  {/* NEW: Mobile My Orders Link */}
+                  <Link
+                    href="/orders"
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50"
+                  >
+                    My Orders
+                  </Link>
                   <button
                     onClick={() => { setMenuOpen(false); logout(); }}
                     className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50"

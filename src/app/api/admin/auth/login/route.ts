@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    // FIX: Added .select('+password') to pull the hidden password from the database
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
 
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
