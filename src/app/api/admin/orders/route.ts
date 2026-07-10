@@ -1,33 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/auth';
-import { getAllOrders, updateOrderStatus } from '@/lib/controllers/adminController';
+import { jwtVerify } from 'jose';
+import dbConnect from '@/lib/db';
+import Order from '@/lib/models/Order';
 
-export async function GET() {
-  const admin = await requireAdmin();
-  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
+export async function GET(request: NextRequest) {
   try {
-    const orders = await getAllOrders();
-    return NextResponse.json({ orders });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 });
-  }
-}
+    const token = request.cookies.get('token')?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-export async function PATCH(request: NextRequest) {
-  const admin = await requireAdmin();
-  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  try {
-    const { orderId, status } = await request.json();
-
-    if (!orderId || !status) {
-      return NextResponse.json({ error: 'Order ID and status are required' }, { status: 400 });
+    const { payload } = await jwtVerify(token, secret);
+    if (payload.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const updatedOrder = await updateOrderStatus(orderId, status);
-    return NextResponse.json({ order: updatedOrder });
+    await dbConnect();
+
+    const orders = await Order.find()
+      .populate('user', 'name email')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return NextResponse.json({ orders });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
+    console.error('Admin orders fetch error:', error);
+    return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 });
   }
 }
