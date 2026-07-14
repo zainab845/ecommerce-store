@@ -18,6 +18,10 @@ export async function POST(request: NextRequest) {
     const userId = payload.id as string;
     const userName = (payload.name as string) || 'Customer';
 
+    if (payload.role === 'admin') {
+      return NextResponse.json({ error: 'Admin accounts are restricted from placing orders.' }, { status: 403 });
+    }
+
     const { items, totalAmount, shippingAddress } = await request.json();
 
     if (!items || items.length === 0) {

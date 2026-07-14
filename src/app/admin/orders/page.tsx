@@ -1,22 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-
-interface OrderItem {
-  name: string;
-  price: number;
-  quantity: number;
-}
+import { useState, useEffect, useCallback } from 'react';
 
 interface Order {
   _id: string;
   user: { name: string; email: string } | null;
-  items: OrderItem[];
+  items: { name: string; price: number; quantity: number }[];
   totalAmount: number;
   status: 'Pending' | 'Paid' | 'Accepted' | 'Refunded' | 'Cancelled';
   refundReason?: string;
-  stripePaymentIntentId?: string;
   createdAt: string;
+}
+
+interface Pagination {
+  page: number;
+  totalPages: number;
+  totalCount: number;
 }
 
 const statusStyles: Record<string, string> = {
@@ -27,63 +26,54 @@ const statusStyles: Record<string, string> = {
   Cancelled: 'bg-red-100 text-red-600',
 };
 
+const LIMIT = 10;
+
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [pagination, setPagination] = useState<Pagination>({ page: 1, totalPages: 1, totalCount: 0 });
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [page, setPage] = useState(1);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [refundModal, setRefundModal] = useState({ open: false, orderId: '', reason: '' });
 
-  // Refund modal state
-  const [refundModal, setRefundModal] = useState<{
-    open: boolean;
-    orderId: string;
-    reason: string;
-  }>({ open: false, orderId: '', reason: '' });
-
-  useEffect(() => {
-    loadOrders();
-  }, []);
-
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await fetch('/api/admin/orders');
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(LIMIT));
+      if (statusFilter) params.set('status', statusFilter);
+
+      const res = await fetch(`/api/admin/orders?${params.toString()}`);
       const data = await res.json();
       setOrders(data.orders ?? []);
+      setPagination(data.pagination ?? { page: 1, totalPages: 1, totalCount: 0 });
     } catch {
       showMessage('Failed to load orders', 'error');
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, statusFilter]);
+
+  useEffect(() => { loadOrders(); }, [loadOrders]);
 
   const showMessage = (text: string, type: 'success' | 'error') => {
     setMessage({ text, type });
-    setTimeout(() => setMessage(null), 4000);
+    setTimeout(() => setMessage(null), 3500);
   };
 
   const handleAccept = async (orderId: string) => {
     if (!window.confirm('Accept this order?')) return;
     setActionLoading(orderId);
     try {
-      const res = await fetch(`/api/admin/orders/${orderId}/accept`, {
-        method: 'POST',
-      });
+      const res = await fetch(`/api/admin/orders/${orderId}/accept`, { method: 'POST' });
       const data = await res.json();
-      if (res.ok) {
-        showMessage('Order accepted successfully', 'success');
-        loadOrders();
-      } else {
-        showMessage(data.error || 'Failed to accept order', 'error');
-      }
-    } catch {
-      showMessage('Something went wrong', 'error');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const openRefundModal = (orderId: string) => {
-    setRefundModal({ open: true, orderId, reason: '' });
+      if (res.ok) { showMessage('Order accepted', 'success'); loadOrders(); }
+      else showMessage(data.error || 'Failed', 'error');
+    } catch { showMessage('Something went wrong', 'error'); }
+    finally { setActionLoading(null); }
   };
 
   const handleRefund = async () => {
@@ -97,68 +87,75 @@ export default function AdminOrdersPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        showMessage('Refund issued successfully', 'success');
+        showMessage('Refund issued', 'success');
         setRefundModal({ open: false, orderId: '', reason: '' });
         loadOrders();
-      } else {
-        showMessage(data.error || 'Failed to process refund', 'error');
-      }
-    } catch {
-      showMessage('Something went wrong', 'error');
-    } finally {
-      setActionLoading(null);
-    }
+      } else showMessage(data.error || 'Failed', 'error');
+    } catch { showMessage('Something went wrong', 'error'); }
+    finally { setActionLoading(null); }
   };
 
   return (
     <div>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">All Orders</h1>
-        <p className="text-gray-500 mt-1 text-sm">
-          {orders.length} {orders.length === 1 ? 'order' : 'orders'} total
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
+          <p className="text-gray-500 text-sm mt-0.5">{pagination.totalCount} total</p>
+        </div>
       </div>
 
-      {/* Toast message */}
+      {/* Filter */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-5">
+        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+          <span className="text-sm font-medium text-gray-700 flex-shrink-0">Filter by status:</span>
+          <div className="flex flex-wrap gap-2">
+            {['', 'Pending', 'Paid', 'Accepted', 'Refunded', 'Cancelled'].map(s => (
+              <button key={s || 'all'}
+                onClick={() => { setStatusFilter(s); setPage(1); }}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  statusFilter === s
+                    ? 'bg-indigo-600 text-white'
+                    : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}>
+                {s || 'All'}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Toast */}
       {message && (
-        <div
-          className={`mb-5 px-4 py-3 rounded-xl text-sm font-medium border ${
-            message.type === 'success'
-              ? 'bg-green-50 text-green-700 border-green-100'
-              : 'bg-red-50 text-red-700 border-red-100'
-          }`}
-        >
+        <div className={`mb-4 px-4 py-3 rounded-xl text-sm font-medium border ${
+          message.type === 'success'
+            ? 'bg-green-50 text-green-700 border-green-100'
+            : 'bg-red-50 text-red-700 border-red-100'
+        }`}>
           {message.text}
         </div>
       )}
 
-      {/* Orders */}
       {loading ? (
         <div className="space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-20 bg-gray-100 rounded-2xl animate-pulse" />
+          {[...Array(LIMIT)].map((_, i) => (
+            <div key={i} className="h-16 bg-gray-100 rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : orders.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center">
-          <p className="text-gray-400 font-medium">No orders yet</p>
-          <p className="text-gray-300 text-sm mt-1">
-            Orders will appear here once customers complete payment
-          </p>
+          <p className="text-gray-400 font-medium">No orders found</p>
         </div>
       ) : (
         <>
-          {/* Desktop table */}
+          {/* Desktop */}
           <div className="hidden md:block bg-white rounded-2xl border border-gray-100 overflow-hidden">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-50 bg-gray-50">
                   {['Order', 'Customer', 'Items', 'Total', 'Status', 'Date', 'Actions'].map(h => (
-                    <th
-                      key={h}
-                      className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                    >
+                    <th key={h}
+                      className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       {h}
                     </th>
                   ))}
@@ -173,18 +170,11 @@ export default function AdminOrdersPage() {
                       </p>
                     </td>
                     <td className="px-5 py-4">
-                      <p className="text-sm font-medium text-gray-900">
-                        {order.user?.name || 'Deleted user'}
-                      </p>
+                      <p className="text-sm font-medium text-gray-900">{order.user?.name || '—'}</p>
                       <p className="text-xs text-gray-400">{order.user?.email}</p>
                     </td>
                     <td className="px-5 py-4">
-                      <p className="text-sm text-gray-600">
-                        {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">
-                        {order.items.map(i => i.name).join(', ')}
-                      </p>
+                      <p className="text-sm text-gray-600">{order.items.length} item(s)</p>
                     </td>
                     <td className="px-5 py-4">
                       <p className="text-sm font-semibold text-gray-900">
@@ -192,11 +182,7 @@ export default function AdminOrdersPage() {
                       </p>
                     </td>
                     <td className="px-5 py-4">
-                      <span
-                        className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          statusStyles[order.status]
-                        }`}
-                      >
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusStyles[order.status]}`}>
                         {order.status}
                       </span>
                       {order.status === 'Refunded' && order.refundReason && (
@@ -208,29 +194,23 @@ export default function AdminOrdersPage() {
                     <td className="px-5 py-4">
                       <p className="text-sm text-gray-500">
                         {new Date(order.createdAt).toLocaleDateString('en-US', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
+                          day: 'numeric', month: 'short', year: 'numeric',
                         })}
                       </p>
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex gap-2">
                         {order.status === 'Paid' && (
-                          <button
-                            onClick={() => handleAccept(order._id)}
+                          <button onClick={() => handleAccept(order._id)}
                             disabled={actionLoading === order._id}
-                            className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
-                          >
+                            className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors">
                             {actionLoading === order._id ? '...' : 'Accept'}
                           </button>
                         )}
                         {(order.status === 'Paid' || order.status === 'Accepted') && (
-                          <button
-                            onClick={() => openRefundModal(order._id)}
+                          <button onClick={() => setRefundModal({ open: true, orderId: order._id, reason: '' })}
                             disabled={actionLoading === order._id}
-                            className="px-3 py-1.5 text-xs font-semibold border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
-                          >
+                            className="px-3 py-1.5 text-xs font-semibold border border-red-200 text-red-600 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors">
                             Refund
                           </button>
                         )}
@@ -246,64 +226,33 @@ export default function AdminOrdersPage() {
           </div>
 
           {/* Mobile cards */}
-          <div className="md:hidden space-y-4">
+          <div className="md:hidden space-y-3">
             {orders.map(order => (
-              <div
-                key={order._id}
-                className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4"
-              >
+              <div key={order._id} className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-xs text-gray-400 font-mono">
-                      #{order._id.slice(-8).toUpperCase()}
-                    </p>
-                    <p className="font-medium text-gray-900 mt-0.5">
-                      {order.user?.name || 'Deleted user'}
-                    </p>
+                    <p className="text-xs text-gray-400 font-mono">#{order._id.slice(-8).toUpperCase()}</p>
+                    <p className="font-medium text-gray-900">{order.user?.name || '—'}</p>
                     <p className="text-xs text-gray-400">{order.user?.email}</p>
                   </div>
-                  <span
-                    className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      statusStyles[order.status]
-                    }`}
-                  >
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusStyles[order.status]}`}>
                     {order.status}
                   </span>
                 </div>
-
-                <div className="text-sm text-gray-600">
-                  <p>{order.items.length} {order.items.length === 1 ? 'item' : 'items'}: {order.items.map(i => i.name).join(', ')}</p>
-                  <p className="font-bold text-gray-900 mt-1">${order.totalAmount.toFixed(2)}</p>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">{order.items.length} item(s)</span>
+                  <span className="font-bold text-gray-900">${order.totalAmount.toFixed(2)}</span>
                 </div>
-
-                {order.status === 'Refunded' && order.refundReason && (
-                  <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
-                    Refund reason: {order.refundReason}
-                  </p>
-                )}
-
-                <p className="text-xs text-gray-400">
-                  {new Date(order.createdAt).toLocaleDateString('en-US', {
-                    day: 'numeric', month: 'short', year: 'numeric',
-                  })}
-                </p>
-
                 <div className="flex gap-2">
                   {order.status === 'Paid' && (
-                    <button
-                      onClick={() => handleAccept(order._id)}
-                      disabled={actionLoading === order._id}
-                      className="flex-1 py-2 text-sm font-semibold bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50"
-                    >
-                      {actionLoading === order._id ? 'Processing...' : 'Accept Order'}
+                    <button onClick={() => handleAccept(order._id)}
+                      className="flex-1 py-2 text-sm font-semibold bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors">
+                      Accept
                     </button>
                   )}
                   {(order.status === 'Paid' || order.status === 'Accepted') && (
-                    <button
-                      onClick={() => openRefundModal(order._id)}
-                      disabled={actionLoading === order._id}
-                      className="flex-1 py-2 text-sm font-semibold border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition-colors disabled:opacity-50"
-                    >
+                    <button onClick={() => setRefundModal({ open: true, orderId: order._id, reason: '' })}
+                      className="flex-1 py-2 text-sm font-semibold border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition-colors">
                       Refund
                     </button>
                   )}
@@ -311,6 +260,23 @@ export default function AdminOrdersPage() {
               </div>
             ))}
           </div>
+
+          {/* Pagination */}
+          {pagination.totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8">
+              <button onClick={() => setPage(p => p - 1)} disabled={page <= 1}
+                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40 transition-colors">
+                ← Prev
+              </button>
+              <span className="text-sm text-gray-600">
+                Page {page} of {pagination.totalPages}
+              </span>
+              <button onClick={() => setPage(p => p + 1)} disabled={page >= pagination.totalPages}
+                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40 transition-colors">
+                Next →
+              </button>
+            </div>
+          )}
         </>
       )}
 
@@ -319,39 +285,20 @@ export default function AdminOrdersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-1">Issue Refund</h2>
-            <p className="text-sm text-gray-500 mb-5">
-              The customer will receive a full refund. Please provide a reason.
-            </p>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Reason for refund <span className="text-red-400">*</span>
-              </label>
-              <textarea
-                rows={4}
-                placeholder="e.g. Item is out of stock, Unable to fulfill order..."
-                value={refundModal.reason}
-                onChange={e =>
-                  setRefundModal(prev => ({ ...prev, reason: e.target.value }))
-                }
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-red-300 resize-none"
-              />
-            </div>
-
+            <p className="text-sm text-gray-500 mb-5">Provide a reason for the refund.</p>
+            <textarea rows={4}
+              placeholder="e.g. Item out of stock, unable to fulfill..."
+              value={refundModal.reason}
+              onChange={e => setRefundModal(prev => ({ ...prev, reason: e.target.value }))}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-red-300 resize-none mb-4" />
             <div className="flex gap-3">
-              <button
-                onClick={() =>
-                  setRefundModal({ open: false, orderId: '', reason: '' })
-                }
-                className="flex-1 py-2.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
-              >
+              <button onClick={() => setRefundModal({ open: false, orderId: '', reason: '' })}
+                className="flex-1 py-2.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors">
                 Cancel
               </button>
-              <button
-                onClick={handleRefund}
+              <button onClick={handleRefund}
                 disabled={!refundModal.reason.trim() || actionLoading !== null}
-                className="flex-1 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50"
-              >
+                className="flex-1 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 disabled:opacity-50 transition-colors">
                 {actionLoading ? 'Processing...' : 'Confirm Refund'}
               </button>
             </div>

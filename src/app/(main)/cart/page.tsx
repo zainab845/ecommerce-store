@@ -15,7 +15,6 @@ interface AddressData {
 }
 
 // Reverse geocode coordinates to a readable address
-// Uses OpenStreetMap Nominatim — free, no API key required
 async function reverseGeocode(lat: number, lng: number): Promise<string> {
   const res = await fetch(
     `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
@@ -27,8 +26,7 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
 }
 
 export default function CartPage() {
-  const { items, totalItems, uniqueItems, totalPrice, removeItem, updateQuantity, clearCart } =
-    useCart();
+  const { items, totalItems, uniqueItems, totalPrice, removeItem, updateQuantity, clearCart } = useCart();
   const { user } = useAuth();
   const router = useRouter();
 
@@ -69,7 +67,6 @@ export default function CartPage() {
           setEditedAddress(readable);
           setStep('address');
         } catch {
-          // Reverse geocoding failed — fall back to manual entry
           setAddress({ fullAddress: '' });
           setEditedAddress('');
           setIsEditing(true);
@@ -79,7 +76,6 @@ export default function CartPage() {
         }
       },
       () => {
-        // User denied location — go to manual entry
         setAddress({ fullAddress: '' });
         setEditedAddress('');
         setIsEditing(true);
@@ -167,8 +163,6 @@ export default function CartPage() {
 
     return (
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-
-        {/* Back button — only if not already paying */}
         {step !== 'paying' && (
           <button
             onClick={() => {
@@ -429,31 +423,38 @@ export default function CartPage() {
           </div>
         )}
 
-        <button
-          onClick={handleRequestLocation}
-          disabled={geoLoading}
-          className="w-full mt-4 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
-        >
-          {geoLoading ? (
-            <>
-              <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              Detecting location...
-            </>
-          ) : (
-            <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              {user ? 'Pay Now with Stripe' : 'Log in to Checkout'}
-            </>
-          )}
-        </button>
+        {user?.role === 'admin' ? (
+          <div className="w-full mt-4 p-4 bg-gray-100 border border-gray-200 rounded-xl text-center">
+            <p className="text-sm font-semibold text-gray-700">Admin accounts cannot make purchases.</p>
+            <p className="text-xs text-gray-500 mt-1">Please log in with a customer account to test checkout.</p>
+          </div>
+        ) : (
+          <button
+            onClick={handleRequestLocation}
+            disabled={geoLoading}
+            className="w-full mt-4 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
+          >
+            {geoLoading ? (
+              <>
+                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Detecting location...
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                {user ? 'Pay Now with Stripe' : 'Log in to Checkout'}
+              </>
+            )}
+          </button>
+        )}
 
-        {user && (
+        {user && user.role !== 'admin' && (
           <p className="text-center text-xs text-gray-400 mt-2">
             Secured by Stripe. Your card details are never stored.
           </p>
