@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 interface OrderItem {
   name: string;
@@ -19,6 +20,12 @@ interface Order {
   createdAt: string;
 }
 
+interface Pagination {
+  page: number;
+  totalPages: number;
+  totalCount: number;
+}
+
 const statusStyles: Record<string, string> = {
   Pending: 'bg-gray-100 text-gray-600',
   Paid: 'bg-blue-100 text-blue-700',
@@ -27,11 +34,19 @@ const statusStyles: Record<string, string> = {
   Cancelled: 'bg-red-100 text-red-600',
 };
 
-export default function AdminOrdersPage() {
+function AdminOrdersContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  // URL Parameters State
+  const page = parseInt(searchParams.get('page') || '1');
+  const statusFilter = searchParams.get('status') || 'All';
+  const [pagination, setPagination] = useState<Pagination>({ page: 1, totalPages: 1, totalCount: 0 });
 
   // Refund modal state
   const [refundModal, setRefundModal] = useState<{
@@ -42,18 +57,30 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     loadOrders();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, statusFilter]);
 
   const loadOrders = async () => {
+    setLoading(true);
     try {
-      const res = await fetch('/api/admin/orders');
+      const res = await fetch(`/api/admin/orders?page=${page}&limit=10&status=${statusFilter}`);
       const data = await res.json();
       setOrders(data.orders ?? []);
+      if (data.pagination) setPagination(data.pagination);
     } catch {
       showMessage('Failed to load orders', 'error');
     } finally {
       setLoading(false);
     }
+  };
+
+  const updateParam = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value && value !== 'All') params.set(key, value);
+    else params.delete(key);
+    
+    if (key !== 'page') params.set('page', '1'); // Reset to page 1 on filter change
+    router.push(`/admin/orders?${params.toString()}`);
   };
 
   const showMessage = (text: string, type: 'success' | 'error') => {
@@ -112,12 +139,28 @@ export default function AdminOrdersPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">All Orders</h1>
-        <p className="text-gray-500 mt-1 text-sm">
-          {orders.length} {orders.length === 1 ? 'order' : 'orders'} total
-        </p>
+      {/* Header & Filters */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">All Orders</h1>
+          <p className="text-gray-500 mt-1 text-sm">
+            {pagination.totalCount} {pagination.totalCount === 1 ? 'order' : 'orders'} total
+          </p>
+        </div>
+        
+        {/* Status Filter */}
+        <select
+          value={statusFilter}
+          onChange={(e) => updateParam('status', e.target.value)}
+          className="px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-900 bg-white focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition-colors cursor-pointer"
+        >
+          <option value="All">All Statuses</option>
+          <option value="Pending">Pending</option>
+          <option value="Paid">Paid</option>
+          <option value="Accepted">Accepted</option>
+          <option value="Refunded">Refunded</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
       </div>
 
       {/* Toast message */}
@@ -142,15 +185,23 @@ export default function AdminOrdersPage() {
         </div>
       ) : orders.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center">
-          <p className="text-gray-400 font-medium">No orders yet</p>
+          <p className="text-gray-400 font-medium">No orders found</p>
           <p className="text-gray-300 text-sm mt-1">
-            Orders will appear here once customers complete payment
+            Try changing your filter criteria
           </p>
+          {statusFilter !== 'All' && (
+            <button
+              onClick={() => updateParam('status', 'All')}
+              className="mt-4 text-sm text-indigo-600 hover:underline"
+            >
+              Clear filter
+            </button>
+          )}
         </div>
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden md:block bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="hidden md:block bg-white rounded-2xl border border-gray-100 overflow-hidden mb-6">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-50 bg-gray-50">
@@ -246,7 +297,7 @@ export default function AdminOrdersPage() {
           </div>
 
           {/* Mobile cards */}
-          <div className="md:hidden space-y-4">
+          <div className="md:hidden space-y-4 mb-6">
             {orders.map(order => (
               <div
                 key={order._id}
@@ -311,13 +362,36 @@ export default function AdminOrdersPage() {
               </div>
             ))}
           </div>
+
+          {/* Pagination Controls */}
+          {pagination.totalPages > 1 && (
+            <div className="flex justify-between items-center bg-white p-4 border border-gray-100 rounded-2xl">
+              <button
+                onClick={() => updateParam('page', String(pagination.page - 1))}
+                disabled={pagination.page <= 1}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-xl disabled:opacity-50 hover:bg-gray-100 transition-colors"
+              >
+                Previous
+              </button>
+              <span className="text-sm font-medium text-gray-600">
+                Page <span className="text-indigo-600 font-bold">{pagination.page}</span> of {pagination.totalPages}
+              </span>
+              <button
+                onClick={() => updateParam('page', String(pagination.page + 1))}
+                disabled={pagination.page >= pagination.totalPages}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-xl disabled:opacity-50 hover:bg-gray-100 transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </>
       )}
 
       {/* Refund Modal */}
       {refundModal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-1">Issue Refund</h2>
             <p className="text-sm text-gray-500 mb-5">
               The customer will receive a full refund. Please provide a reason.
@@ -334,7 +408,7 @@ export default function AdminOrdersPage() {
                 onChange={e =>
                   setRefundModal(prev => ({ ...prev, reason: e.target.value }))
                 }
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-red-300 resize-none"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-red-300 focus:ring-2 focus:ring-red-50 resize-none transition-colors"
               />
             </div>
 
@@ -359,5 +433,17 @@ export default function AdminOrdersPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AdminOrdersPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-10 text-center">
+        <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto" />
+      </div>
+    }>
+      <AdminOrdersContent />
+    </Suspense>
   );
 }
