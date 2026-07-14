@@ -14,14 +14,15 @@ export default function ProductForm({ initialData, productId }: Props) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [form, setForm] = useState({
+ const [form, setForm] = useState({
     name: initialData?.name ?? '',
     description: initialData?.description ?? '',
     price: initialData?.price?.toString() ?? '',
     originalPrice: initialData?.originalPrice?.toString() ?? '',
     images: initialData?.images?.join('\n') ?? '',
+    // ADDED: && initialData.category !== null
     category:
-      typeof initialData?.category === 'object'
+      typeof initialData?.category === 'object' && initialData.category !== null
         ? initialData.category._id
         : initialData?.category ?? '',
     stock: initialData?.stock?.toString() ?? '0',

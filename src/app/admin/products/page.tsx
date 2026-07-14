@@ -127,7 +127,7 @@ export default function AdminProductsPage() {
                   </td>
                   <td className="px-6 py-4 hidden sm:table-cell">
                     <span className="text-sm text-gray-600">
-                      {typeof product.category === 'object' ? product.category.name : '—'}
+                     {typeof product.category === 'object' && product.category !== null ? product.category.name : 'Uncategorized'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
