@@ -1,11 +1,27 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
-const ContactSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true },
-  message: { type: String, required: true },
-  status: { type: String, enum: ['New', 'Read', 'Replied'], default: 'New' },
-  createdAt: { type: Date, default: Date.now }
-});
+export interface IContact extends Document {
+  name: string;
+  email: string;
+  subject?: string;
+  message: string;
+  replied: boolean;
+  repliedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-export default mongoose.models.Contact || mongoose.model('Contact', ContactSchema);
+const ContactSchema = new Schema<IContact>(
+  {
+    name: { type: String, required: true, trim: true },
+    email: { type: String, required: true, lowercase: true, trim: true },
+    subject: { type: String, trim: true },
+    message: { type: String, required: true },
+    replied: { type: Boolean, default: false },
+    repliedAt: { type: Date },
+  },
+  { timestamps: true }
+);
+
+export default mongoose.models.Contact ||
+  mongoose.model<IContact>('Contact', ContactSchema);
