@@ -210,7 +210,7 @@ function ProductsContent() {
               </div>
               <div className="p-4">
                 <p className="text-xs text-indigo-600 font-medium mb-1">
-                  {typeof product.category === 'object' ? product.category.name : ''}
+                  {typeof product.category === 'object' && product.category !== null ? product.category.name : 'Uncategorized'}
                 </p>
                 <h3 className="font-medium text-gray-900 truncate">{product.name}</h3>
                 <div className="mt-2 flex items-center justify-between">
@@ -232,60 +232,60 @@ function ProductsContent() {
         </div>
       )}
 
-{/* Pagination - Always visible when there are products */}
-{!loading && !error && pagination.totalCount > 0 && (
-  <div className="flex items-center justify-center gap-2 mt-12">
-    <button
-      onClick={() => goToPage(pagination.page - 1)}
-      disabled={pagination.page <= 1}
-      className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-    >
-      ← Previous
-    </button>
+      {/* Pagination - Always visible when there are products */}
+      {!loading && !error && pagination.totalCount > 0 && (
+        <div className="flex items-center justify-center gap-2 mt-12">
+          <button
+            onClick={() => goToPage(pagination.page - 1)}
+            disabled={pagination.page <= 1}
+            className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            ← Previous
+          </button>
 
-    <div className="flex items-center gap-1">
-      {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
-        .filter(p => {
-          // Show first, last, current, and nearby pages
-          if (p === 1 || p === pagination.totalPages) return true;
-          if (Math.abs(p - pagination.page) <= 1) return true;
-          return false;
-        })
-        .reduce<(number | string)[]>((acc, p, idx, arr) => {
-          if (idx > 0 && typeof arr[idx - 1] === 'number' && (p as number) - (arr[idx - 1] as number) > 1) {
-            acc.push('...');
-          }
-          acc.push(p);
-          return acc;
-        }, [])
-        .map((p, idx) =>
-          p === '...' ? (
-            <span key={`dots-${idx}`} className="px-2 py-2 text-sm text-gray-400">…</span>
-          ) : (
-            <button
-              key={p}
-              onClick={() => goToPage(p as number)}
-              className={`w-9 h-9 text-sm font-medium rounded-xl transition-colors ${
-                p === pagination.page
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-gray-600 border border-gray-200 hover:bg-gray-50'
-              }`}
-            >
-              {p}
-            </button>
-          )
-        )}
-    </div>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+              .filter(p => {
+                // Show first, last, current, and nearby pages
+                if (p === 1 || p === pagination.totalPages) return true;
+                if (Math.abs(p - pagination.page) <= 1) return true;
+                return false;
+              })
+              .reduce<(number | string)[]>((acc, p, idx, arr) => {
+                if (idx > 0 && typeof arr[idx - 1] === 'number' && (p as number) - (arr[idx - 1] as number) > 1) {
+                  acc.push('...');
+                }
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((p, idx) =>
+                p === '...' ? (
+                  <span key={`dots-${idx}`} className="px-2 py-2 text-sm text-gray-400">…</span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => goToPage(p as number)}
+                    className={`w-9 h-9 text-sm font-medium rounded-xl transition-colors ${
+                      p === pagination.page
+                        ? 'bg-indigo-600 text-white'
+                        : 'text-gray-600 border border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+          </div>
 
-    <button
-      onClick={() => goToPage(pagination.page + 1)}
-      disabled={pagination.page >= pagination.totalPages}
-      className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-    >
-      Next →
-    </button>
-  </div>
-)}
+          <button
+            onClick={() => goToPage(pagination.page + 1)}
+            disabled={pagination.page >= pagination.totalPages}
+            className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Next →
+          </button>
+        </div>
+      )}
     </div>
   );
 }
