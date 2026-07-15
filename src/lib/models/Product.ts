@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { isPageStatic } from 'next/dist/build/utils';
 
 export interface IProduct extends Document {
   name: string;
@@ -13,6 +14,7 @@ export interface IProduct extends Document {
   reviewCount: number;
   isFeatured: boolean;
   createdAt: Date;
+  isPremiumOnly: boolean;
 }
 
 const ProductSchema = new Schema<IProduct>(
@@ -28,6 +30,7 @@ const ProductSchema = new Schema<IProduct>(
     rating: { type: Number, default: 0, min: 0, max: 5 },
     reviewCount: { type: Number, default: 0 },
     isFeatured: { type: Boolean, default: false },
+    isPremiumOnly: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
@@ -37,6 +40,6 @@ ProductSchema.index({ isFeatured: 1, createdAt: -1 });
 ProductSchema.index({ name: 'text' });
 ProductSchema.index({ price: 1 });
 ProductSchema.index({ stock: 1 });
-
+ProductSchema.index({ isPremiumOnly: 1 });
 export default mongoose.models.Product ||
   mongoose.model<IProduct>('Product', ProductSchema);

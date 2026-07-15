@@ -14,7 +14,6 @@ interface AddressData {
   lng?: number;
 }
 
-// Reverse geocode coordinates to a readable address
 async function reverseGeocode(lat: number, lng: number): Promise<string> {
   const res = await fetch(
     `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
@@ -26,8 +25,16 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
 }
 
 export default function CartPage() {
-  const { items, totalItems, uniqueItems, totalPrice, removeItem, updateQuantity, clearCart } = useCart();
-  const { user } = useAuth();
+  const {
+    items,
+    totalItems,
+    uniqueItems,
+    totalPrice,
+    removeItem,
+    updateQuantity,
+    clearCart,
+  } = useCart();
+  const { user, isPremium } = useAuth();
   const router = useRouter();
 
   const [step, setStep] = useState<Step>('cart');
@@ -38,18 +45,19 @@ export default function CartPage() {
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState('');
 
-  // ── Step 1: Click "Pay Now" → get location → show address screen ──
+  // Compute discount
+  const discountAmount = isPremium ? totalPrice * 0.1 : 0;
+  const finalTotal = totalPrice - discountAmount;
+
   const handleRequestLocation = () => {
     if (!user) {
       router.push('/login?from=/cart');
       return;
     }
-
     setError('');
     setGeoLoading(true);
 
     if (!navigator.geolocation) {
-      // Geolocation not supported — go straight to manual entry
       setAddress({ fullAddress: '' });
       setEditedAddress('');
       setIsEditing(true);
@@ -86,9 +94,10 @@ export default function CartPage() {
     );
   };
 
-  // ── Step 2: Confirm address and proceed to Stripe ─────────────────
   const handleConfirmAndPay = async () => {
-    const finalAddress = isEditing ? editedAddress.trim() : address?.fullAddress ?? '';
+    const finalAddress = isEditing
+      ? editedAddress.trim()
+      : address?.fullAddress ?? '';
 
     if (!finalAddress) {
       setError('Please enter your delivery address before continuing.');
@@ -111,7 +120,7 @@ export default function CartPage() {
             quantity: item.quantity,
             image: item.image,
           })),
-          totalAmount: totalPrice,
+          totalAmount: finalTotal,
           shippingAddress: finalAddress,
         }),
       });
@@ -142,15 +151,26 @@ export default function CartPage() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 sm:py-24 text-center">
         <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+          <svg
+            className="w-10 h-10 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+            />
           </svg>
         </div>
         <h1 className="text-2xl font-bold text-gray-900">Your cart is empty</h1>
         <p className="mt-2 text-gray-500">Add some products to get started.</p>
-        <Link href="/products"
-          className="mt-6 inline-block px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors">
+        <Link
+          href="/products"
+          className="mt-6 inline-block px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
+        >
           Browse Products
         </Link>
       </div>
@@ -172,8 +192,18 @@ export default function CartPage() {
             }}
             className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors mb-6"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
             Back to cart
           </button>
@@ -192,11 +222,24 @@ export default function CartPage() {
         <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden mb-6">
           <div className="flex items-center justify-between px-5 py-3.5 bg-gray-50 border-b border-gray-100">
             <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              <svg
+                className="w-4 h-4 text-indigo-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                />
               </svg>
               Delivery address
             </div>
@@ -208,9 +251,18 @@ export default function CartPage() {
                 }}
                 className="flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
               >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  />
                 </svg>
                 Edit
               </button>
@@ -266,12 +318,15 @@ export default function CartPage() {
           </div>
         </div>
 
-        {/* Order summary */}
+        {/* Order summary on address screen */}
         <div className="bg-gray-50 rounded-2xl p-5 mb-6">
           <p className="text-sm font-semibold text-gray-700 mb-3">Order summary</p>
           <div className="space-y-2">
             {items.map(item => (
-              <div key={item.id} className="flex justify-between text-sm text-gray-600">
+              <div
+                key={item.id}
+                className="flex justify-between text-sm text-gray-600"
+              >
                 <span className="truncate max-w-[200px]">
                   {item.name} × {item.quantity}
                 </span>
@@ -281,9 +336,32 @@ export default function CartPage() {
               </div>
             ))}
           </div>
-          <div className="border-t border-gray-200 mt-3 pt-3 flex justify-between font-bold text-gray-900">
-            <span>Total</span>
-            <span>${totalPrice.toFixed(2)}</span>
+          <div className="border-t border-gray-200 mt-3 pt-3 space-y-1.5">
+            {isPremium && (
+              <div className="flex justify-between text-sm text-emerald-600 font-medium">
+                <span className="flex items-center gap-1.5">
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                    />
+                  </svg>
+                  Premium 10% discount
+                </span>
+                <span>−${discountAmount.toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between font-bold text-gray-900">
+              <span>Total</span>
+              <span>${finalTotal.toFixed(2)}</span>
+            </div>
           </div>
         </div>
 
@@ -300,19 +378,43 @@ export default function CartPage() {
         >
           {paying ? (
             <>
-              <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              <svg
+                className="animate-spin w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
               </svg>
               Redirecting to payment...
             </>
           ) : (
             <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
               </svg>
-              Confirm & Pay — ${totalPrice.toFixed(2)}
+              Confirm & Pay — ${finalTotal.toFixed(2)}
             </>
           )}
         </button>
@@ -342,6 +444,36 @@ export default function CartPage() {
         </button>
       </div>
 
+      {/* Premium discount banner */}
+      {isPremium && (
+        <div className="mb-5 flex items-center gap-3 px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-2xl">
+          <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <svg
+              className="w-4 h-4 text-emerald-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+              />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-emerald-800">
+              Premium member discount applied
+            </p>
+            <p className="text-xs text-emerald-600">
+              You save ${discountAmount.toFixed(2)} (10% off) on this order
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Cart items */}
       <div className="space-y-4 mb-8">
         {items.map(item => (
           <div
@@ -357,9 +489,22 @@ export default function CartPage() {
               <h3 className="font-medium text-gray-900 truncate text-sm sm:text-base">
                 {item.name}
               </h3>
-              <p className="text-indigo-600 font-bold mt-1 text-sm">
-                ${item.price.toFixed(2)}
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                {isPremium ? (
+                  <>
+                    <span className="text-emerald-600 font-bold text-sm">
+                      ${(item.price * 0.9).toFixed(2)}
+                    </span>
+                    <span className="text-gray-400 text-xs line-through">
+                      ${item.price.toFixed(2)}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-indigo-600 font-bold text-sm">
+                    ${item.price.toFixed(2)}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex flex-col items-end gap-2 sm:gap-3">
               <button
@@ -375,15 +520,21 @@ export default function CartPage() {
                     else updateQuantity(item.id, item.quantity - 1);
                   }}
                   className="px-2 sm:px-3 py-1.5 text-gray-600 hover:bg-gray-50 text-sm"
-                >−</button>
-                <span className="px-2 sm:px-3 py-1.5 text-sm font-medium">{item.quantity}</span>
+                >
+                  −
+                </button>
+                <span className="px-2 sm:px-3 py-1.5 text-sm font-medium">
+                  {item.quantity}
+                </span>
                 <button
                   onClick={() => updateQuantity(item.id, item.quantity + 1)}
                   className="px-2 sm:px-3 py-1.5 text-gray-600 hover:bg-gray-50 text-sm"
-                >+</button>
+                >
+                  +
+                </button>
               </div>
               <p className="text-sm font-semibold text-gray-900">
-                ${(item.price * item.quantity).toFixed(2)}
+                ${(item.price * (isPremium ? 0.9 : 1) * item.quantity).toFixed(2)}
               </p>
             </div>
           </div>
@@ -393,16 +544,41 @@ export default function CartPage() {
       {/* Order summary */}
       <div className="bg-gray-50 rounded-2xl p-5 sm:p-6">
         <div className="flex justify-between text-sm text-gray-600 mb-2">
-          <span>Subtotal ({totalItems} {totalItems === 1 ? 'item' : 'items'})</span>
+          <span>
+            Subtotal ({totalItems} {totalItems === 1 ? 'item' : 'items'})
+          </span>
           <span>${totalPrice.toFixed(2)}</span>
         </div>
+
+        {isPremium && (
+          <div className="flex justify-between text-sm text-emerald-600 font-medium mb-2">
+            <span className="flex items-center gap-1.5">
+              <svg
+                className="w-3.5 h-3.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                />
+              </svg>
+              Premium 10% discount
+            </span>
+            <span>−${discountAmount.toFixed(2)}</span>
+          </div>
+        )}
+
         <div className="flex justify-between text-sm text-gray-600 mb-4">
           <span>Shipping</span>
           <span className="text-green-600 font-medium">Free</span>
         </div>
         <div className="border-t border-gray-200 pt-4 flex justify-between font-bold text-gray-900 text-lg">
           <span>Total</span>
-          <span>${totalPrice.toFixed(2)}</span>
+          <span>${finalTotal.toFixed(2)}</span>
         </div>
 
         {!user && (
@@ -417,50 +593,84 @@ export default function CartPage() {
           </div>
         )}
 
+        {user && !isPremium && (
+          <div className="mt-4 p-3 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between gap-3">
+            <p className="text-sm text-indigo-700">
+              Get 10% off every order with Premium
+            </p>
+            <Link
+              href="/subscription"
+              className="flex-shrink-0 text-xs font-semibold text-indigo-600 hover:text-indigo-700 underline"
+            >
+              Upgrade →
+            </Link>
+          </div>
+        )}
+
         {error && (
           <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-xl">
             <p className="text-sm text-red-700 text-center">{error}</p>
           </div>
         )}
 
-        {user?.role === 'admin' ? (
-          <div className="w-full mt-4 p-4 bg-gray-100 border border-gray-200 rounded-xl text-center">
-            <p className="text-sm font-semibold text-gray-700">Admin accounts cannot make purchases.</p>
-            <p className="text-xs text-gray-500 mt-1">Please log in with a customer account to test checkout.</p>
-          </div>
-        ) : (
-          <button
-            onClick={handleRequestLocation}
-            disabled={geoLoading}
-            className="w-full mt-4 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
-          >
-            {geoLoading ? (
-              <>
-                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Detecting location...
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                {user ? 'Pay Now with Stripe' : 'Log in to Checkout'}
-              </>
-            )}
-          </button>
-        )}
+        <button
+          onClick={handleRequestLocation}
+          disabled={geoLoading}
+          className="w-full mt-4 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
+        >
+          {geoLoading ? (
+            <>
+              <svg
+                className="animate-spin w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+              Detecting location...
+            </>
+          ) : (
+            <>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
+              </svg>
+              {user ? `Pay Now — $${finalTotal.toFixed(2)}` : 'Log in to Checkout'}
+            </>
+          )}
+        </button>
 
-        {user && user.role !== 'admin' && (
+        {user && (
           <p className="text-center text-xs text-gray-400 mt-2">
             Secured by Stripe. Your card details are never stored.
           </p>
         )}
 
-        <Link href="/products" className="block text-center mt-3 text-sm text-indigo-600 hover:underline">
+        <Link
+          href="/products"
+          className="block text-center mt-3 text-sm text-indigo-600 hover:underline"
+        >
           Continue Shopping
         </Link>
       </div>
