@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       const session = event.data.object as Stripe.Checkout.Session;
 
       if (session.mode === 'payment') {
-        // ── One-time order payment ─────────────────────────────────
+        // One-time order payment 
         const orderId = session.metadata?.orderId;
         if (!orderId) return NextResponse.json({ received: true });
 
