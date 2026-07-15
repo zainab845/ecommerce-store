@@ -1,5 +1,5 @@
 'use client';
-
+import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -14,6 +14,7 @@ interface Pagination {
 function ProductsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { isPremium } = useAuth();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -195,40 +196,83 @@ function ProductsContent() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {products.map(product => (
-            <Link
-              key={product._id}
-              href={`/products/${product._id}`}
-              className="group bg-white rounded-2xl overflow-hidden border border-gray-100 hover:shadow-md transition-shadow"
-            >
-              <div className="aspect-square bg-gray-50 overflow-hidden">
-                <img
-                  src={product.images?.[0] ?? '/placeholder.png'}
-                  alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
+          {products.map(product => {
+  const isLocked = product.isPremiumOnly && !isPremium;
+  return isLocked ? (
+    // Locked premium product card
+    <div key={product._id}
+      className="relative group bg-white rounded-2xl overflow-hidden border border-gray-100">
+      {/* Blurred preview */}
+      <div className="aspect-square bg-gray-50 overflow-hidden filter blur-[2px]">
+        <img
+          src={product.images?.[0] ?? '/placeholder.png'}
+          alt={product.name}
+          className="w-full h-full object-cover"
+        />
+      </div>
+      {/* Lock overlay */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm">
+        <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-3">
+          <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <p className="font-bold text-gray-900 text-sm">Premium Only</p>
+        <p className="text-xs text-gray-500 mt-1 text-center px-4">{product.name}</p>
+        <Link href="/subscription"
+          className="mt-3 px-4 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+          Upgrade to unlock
+        </Link>
+      </div>
+    </div>
+  ) : (
+    // Normal product card
+    <Link key={product._id} href={`/products/${product._id}`}
+      className="group bg-white rounded-2xl overflow-hidden border border-gray-100 hover:shadow-md transition-shadow">
+      <div className="aspect-square bg-gray-50 overflow-hidden">
+        <img
+          src={product.images?.[0] ?? '/placeholder.png'}
+          alt={product.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+      </div>
+      <div className="p-4">
+        <div className="flex items-center gap-2 mb-1">
+          <p className="text-xs text-indigo-600 font-medium">
+            {typeof product.category === 'object' && product.category !== null
+              ? product.category.name : 'Uncategorized'}
+          </p>
+          {product.isPremiumOnly && (
+            <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold uppercase">
+              Premium
+            </span>
+          )}
+        </div>
+        <h3 className="font-medium text-gray-900 truncate">{product.name}</h3>
+        <div className="mt-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {isPremium ? (
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-emerald-600">
+                  ${(product.price * 0.9).toFixed(2)}
+                </span>
+                <span className="text-xs text-gray-400 line-through">
+                  ${product.price.toFixed(2)}
+                </span>
               </div>
-              <div className="p-4">
-                <p className="text-xs text-indigo-600 font-medium mb-1">
-                  {typeof product.category === 'object' && product.category !== null ? product.category.name : 'Uncategorized'}
-                </p>
-                <h3 className="font-medium text-gray-900 truncate">{product.name}</h3>
-                <div className="mt-2 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-gray-900">${product.price.toFixed(2)}</span>
-                    {product.originalPrice && (
-                      <span className="text-xs text-gray-400 line-through">
-                        ${product.originalPrice.toFixed(2)}
-                      </span>
-                    )}
-                  </div>
-                  {product.stock === 0 && (
-                    <span className="text-xs text-red-500 font-medium">Out of stock</span>
-                  )}
-                </div>
-              </div>
-            </Link>
-          ))}
+            ) : (
+              <span className="font-bold text-gray-900">${product.price.toFixed(2)}</span>
+            )}
+          </div>
+          {product.stock === 0 && (
+            <span className="text-xs text-red-500 font-medium">Out of stock</span>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+})}
         </div>
       )}
 
