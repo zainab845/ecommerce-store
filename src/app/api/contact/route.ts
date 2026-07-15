@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Contact from '@/lib/models/Contact';
+import { pushNotification } from '@/lib/firebase-admin';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,8 +18,14 @@ export async function POST(request: NextRequest) {
 
     await Contact.create({ name, email, message, subject: subject || 'General Inquiry' });
 
+    await pushNotification({
+      type: 'contact_form',
+      title: 'New Contact Message',
+      message: `From ${name}: ${subject || 'General inquiry'}`,
+    });
+
     return NextResponse.json(
-      { message: 'Message sent successfully. We will get back to you soon.' },
+      { message: 'Message sent successfully.' },
       { status: 201 }
     );
   } catch (error) {
