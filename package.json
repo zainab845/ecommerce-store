@@ -13,7 +13,7 @@
     "@stripe/stripe-js": "^9.9.0",
     "bcryptjs": "^3.0.3",
     "firebase": "^12.16.0",
-    "firebase-admin": "^14.1.0",
+    "firebase-admin": "^12.5.0",
     "jose": "^6.2.3",
     "jsonwebtoken": "^9.0.3",
     "jwks-rsa": "^4.1.0",
