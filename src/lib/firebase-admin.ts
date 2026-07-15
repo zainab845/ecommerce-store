@@ -9,7 +9,7 @@ if (!getApps().length) {
     if (!process.env.FIREBASE_PROJECT_ID || 
         !process.env.FIREBASE_CLIENT_EMAIL || 
         !privateKey) {
-      throw new Error('Missing Firebase Admin environment variables');
+      throw new Error('Missing Firebase credentials in environment variables');
     }
 
     initializeApp({
