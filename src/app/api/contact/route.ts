@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Contact from '@/lib/models/Contact';
+import { pushNotification } from '@/lib/firebase-admin';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,21 +10,26 @@ export async function POST(request: NextRequest) {
     const { name, email, message, subject } = body;
 
     if (!name || !email || !message) {
-      return NextResponse.json(
-        { error: 'Name, email and message are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Name, email and message are required' }, { status: 400 });
     }
 
-    await Contact.create({ name, email, message, subject: subject || 'General Inquiry' });
+    await Contact.create({ 
+      name, 
+      email, 
+      message, 
+      subject: subject || 'General Inquiry' 
+    });
 
-    return NextResponse.json(
-      { message: 'Message sent successfully. We will get back to you soon.' },
-      { status: 201 }
-    );
+    await pushNotification({
+      type: 'contact_form',
+      title: 'New Contact Message',
+      message: `From ${name} (${email})`,
+    });
+
+    return NextResponse.json({ message: 'Message sent successfully!' }, { status: 201 });
   } catch (error) {
     console.error('Contact form error:', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 });
   }
 }
 
@@ -32,7 +38,8 @@ export async function GET() {
     await dbConnect();
     const contacts = await Contact.find().sort({ createdAt: -1 }).lean();
     return NextResponse.json({ contacts });
-  } catch {
+  } catch (error) {
+    console.error('Failed to fetch contacts:', error);
     return NextResponse.json({ error: 'Failed to fetch contacts' }, { status: 500 });
   }
 }

@@ -26,6 +26,7 @@ export default function ProductForm({ initialData, productId }: Props) {
         : (initialData?.category as string) ?? '',
     stock: initialData?.stock?.toString() ?? '0',
     isFeatured: initialData?.isFeatured ?? false,
+    isPremiumOnly: initialData?.isPremiumOnly ?? false,
   });
 
   useEffect(() => {
@@ -72,9 +73,12 @@ export default function ProductForm({ initialData, productId }: Props) {
         category: form.category,
         stock: parseInt(form.stock) || 0,
         isFeatured: form.isFeatured,
+        isPremiumOnly: form.isPremiumOnly,
       };
 
-      const url = productId ? `/api/admin/products/${productId}` : '/api/admin/products';
+      const url = productId
+        ? `/api/admin/products/${productId}`
+        : '/api/admin/products';
       const method = productId ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
@@ -85,13 +89,13 @@ export default function ProductForm({ initialData, productId }: Props) {
 
       // Always check content-type before calling .json()
       const contentType = res.headers.get('content-type');
-      let data: any = {};
+      let data: Record<string, unknown> = {};
       if (contentType?.includes('application/json')) {
         data = await res.json();
       }
 
       if (!res.ok) {
-        throw new Error(data.error || `Server error: ${res.status}`);
+        throw new Error((data.error as string) || `Server error: ${res.status}`);
       }
 
       router.push('/admin/products');
@@ -111,13 +115,28 @@ export default function ProductForm({ initialData, productId }: Props) {
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
-          <label className={labelClass}>Product Name <span className="text-red-400">*</span></label>
-          <input name="name" type="text" placeholder="e.g. Wireless Headphones"
-            value={form.name} onChange={handleChange} className={inputClass} />
+          <label className={labelClass}>
+            Product Name <span className="text-red-400">*</span>
+          </label>
+          <input
+            name="name"
+            type="text"
+            placeholder="e.g. Wireless Headphones"
+            value={form.name}
+            onChange={handleChange}
+            className={inputClass}
+          />
         </div>
         <div>
-          <label className={labelClass}>Category <span className="text-red-400">*</span></label>
-          <select name="category" value={form.category} onChange={handleChange} className={inputClass}>
+          <label className={labelClass}>
+            Category <span className="text-red-400">*</span>
+          </label>
+          <select
+            name="category"
+            value={form.category}
+            onChange={handleChange}
+            className={inputClass}
+          >
             <option value="">Select a category</option>
             {categories.map(cat => (
               <option key={cat._id} value={cat._id}>{cat.name}</option>
@@ -127,48 +146,120 @@ export default function ProductForm({ initialData, productId }: Props) {
       </div>
 
       <div>
-        <label className={labelClass}>Description <span className="text-red-400">*</span></label>
-        <textarea name="description" rows={4} placeholder="Describe this product..."
-          value={form.description} onChange={handleChange}
-          className={`${inputClass} resize-none`} />
+        <label className={labelClass}>
+          Description <span className="text-red-400">*</span>
+        </label>
+        <textarea
+          name="description"
+          rows={4}
+          placeholder="Describe this product..."
+          value={form.description}
+          onChange={handleChange}
+          className={`${inputClass} resize-none`}
+        />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         <div>
-          <label className={labelClass}>Price (USD) <span className="text-red-400">*</span></label>
-          <input name="price" type="number" step="0.01" min="0" placeholder="0.00"
-            value={form.price} onChange={handleChange} className={inputClass} />
+          <label className={labelClass}>
+            Price (USD) <span className="text-red-400">*</span>
+          </label>
+          <input
+            name="price"
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="0.00"
+            value={form.price}
+            onChange={handleChange}
+            className={inputClass}
+          />
         </div>
         <div>
           <label className={labelClass}>Original Price</label>
-          <input name="originalPrice" type="number" step="0.01" min="0" placeholder="0.00 (optional)"
-            value={form.originalPrice} onChange={handleChange} className={inputClass} />
+          <input
+            name="originalPrice"
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="0.00 (optional)"
+            value={form.originalPrice}
+            onChange={handleChange}
+            className={inputClass}
+          />
         </div>
         <div>
-          <label className={labelClass}>Stock <span className="text-red-400">*</span></label>
-          <input name="stock" type="number" min="0" placeholder="0"
-            value={form.stock} onChange={handleChange} className={inputClass} />
+          <label className={labelClass}>
+            Stock <span className="text-red-400">*</span>
+          </label>
+          <input
+            name="stock"
+            type="number"
+            min="0"
+            placeholder="0"
+            value={form.stock}
+            onChange={handleChange}
+            className={inputClass}
+          />
         </div>
       </div>
 
       <div>
         <label className={labelClass}>Image URLs</label>
-        <textarea name="images" rows={3}
+        <textarea
+          name="images"
+          rows={3}
           placeholder={'https://example.com/image1.jpg\nhttps://example.com/image2.jpg'}
-          value={form.images} onChange={handleChange}
-          className={`${inputClass} resize-none`} />
+          value={form.images}
+          onChange={handleChange}
+          className={`${inputClass} resize-none`}
+        />
         <p className="mt-1.5 text-xs text-gray-400">One URL per line</p>
       </div>
 
+      {/* Feature toggle */}
       <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-        <input name="isFeatured" type="checkbox" id="isFeatured"
-          checked={form.isFeatured} onChange={handleChange}
-          className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
+        <input
+          name="isFeatured"
+          type="checkbox"
+          id="isFeatured"
+          checked={form.isFeatured}
+          onChange={handleChange}
+          className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+        />
         <div>
-          <label htmlFor="isFeatured" className="text-sm font-medium text-gray-900 cursor-pointer">
+          <label
+            htmlFor="isFeatured"
+            className="text-sm font-medium text-gray-900 cursor-pointer"
+          >
             Feature this product
           </label>
-          <p className="text-xs text-gray-500 mt-0.5">Featured products appear on the home page</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Featured products appear on the home page
+          </p>
+        </div>
+      </div>
+
+      {/* Premium only toggle */}
+      <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-xl border border-amber-100">
+        <input
+          name="isPremiumOnly"
+          type="checkbox"
+          id="isPremiumOnly"
+          checked={form.isPremiumOnly}
+          onChange={handleChange}
+          className="w-4 h-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+        />
+        <div>
+          <label
+            htmlFor="isPremiumOnly"
+            className="text-sm font-medium text-gray-900 cursor-pointer"
+          >
+            Premium Only product
+          </label>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Only visible and purchasable by Premium subscribers. Non-members see a locked preview.
+          </p>
         </div>
       </div>
 
@@ -179,12 +270,18 @@ export default function ProductForm({ initialData, productId }: Props) {
       )}
 
       <div className="flex gap-3 pt-2">
-        <button type="submit" disabled={loading}
-          className="px-6 py-2.5 bg-indigo-600 text-white font-semibold text-sm rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-60">
+        <button
+          type="submit"
+          disabled={loading}
+          className="px-6 py-2.5 bg-indigo-600 text-white font-semibold text-sm rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-60"
+        >
           {loading ? 'Saving...' : productId ? 'Update Product' : 'Add Product'}
         </button>
-        <button type="button" onClick={() => router.push('/admin/products')}
-          className="px-6 py-2.5 border border-gray-200 text-gray-700 font-medium text-sm rounded-xl hover:bg-gray-50 transition-colors">
+        <button
+          type="button"
+          onClick={() => router.push('/admin/products')}
+          className="px-6 py-2.5 border border-gray-200 text-gray-700 font-medium text-sm rounded-xl hover:bg-gray-50 transition-colors"
+        >
           Cancel
         </button>
       </div>

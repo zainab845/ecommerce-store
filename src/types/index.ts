@@ -27,6 +27,7 @@ export interface Product {
   reviewCount: number;
   isFeatured: boolean;
   createdAt: string;
+  isPremiumOnly: boolean;
 }
 
 export interface CartItem {

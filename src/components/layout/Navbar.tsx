@@ -25,7 +25,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const { uniqueItems: cartCount } = useCart();
   const { totalItems: wishlistCount } = useWishlist();
-  const { user, loading, logout } = useAuth();
+  const { user, loading, isPremium, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
@@ -102,17 +102,32 @@ export default function Navbar() {
                       onClick={() => setProfileOpen(!profileOpen)}
                       className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                     >
-                      <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center">
+                      {/* Avatar with premium ring */}
+                      <span className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center ${
+                        isPremium
+                          ? 'bg-gradient-to-br from-indigo-500 to-indigo-700 text-white ring-2 ring-indigo-300 ring-offset-1'
+                          : 'bg-indigo-100 text-indigo-700'
+                      }`}>
                         {user.name.charAt(0).toUpperCase()}
                       </span>
                       <span className="hidden lg:block">{user.name.split(' ')[0]}</span>
+                      {isPremium && (
+                        <span className="hidden lg:block text-[10px] bg-indigo-100 text-indigo-700 font-bold px-1.5 py-0.5 rounded uppercase tracking-wide">
+                          Pro
+                        </span>
+                      )}
                       <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
 
                     {profileOpen && (
-                      <div className="absolute right-0 mt-1 w-44 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50">
+                      <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50">
+                        <div className="px-4 py-2 border-b border-gray-50">
+                          <p className="text-xs font-semibold text-gray-900 truncate">{user.name}</p>
+                          <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                        </div>
+
                         {user.role === 'admin' && (
                           <Link
                             href="/admin"
@@ -122,14 +137,35 @@ export default function Navbar() {
                             Admin Panel
                           </Link>
                         )}
-                        {/* NEW: Desktop My Orders Link */}
-                        <Link
-                          href="/orders"
-                          onClick={() => setProfileOpen(false)}
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          My Orders
-                        </Link>
+
+                        {/* Premium link — only for non-admin users */}
+                        {user.role !== 'admin' && (
+                          <Link
+                            href="/subscription"
+                            onClick={() => setProfileOpen(false)}
+                            className={`flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 ${
+                              isPremium ? 'text-indigo-600 font-semibold' : 'text-gray-700'
+                            }`}
+                          >
+                            {isPremium ? (
+                              <>
+                                <svg className="w-3.5 h-3.5 text-indigo-500" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                </svg>
+                                Premium Member
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                </svg>
+                                Upgrade to Premium
+                              </>
+                            )}
+                          </Link>
+                        )}
+
                         <hr className="my-1 border-gray-100" />
                         <button
                           onClick={() => { setProfileOpen(false); logout(); }}
@@ -203,26 +239,32 @@ export default function Navbar() {
             {!loading && (
               user ? (
                 <>
-                  <p className="px-3 py-1 text-xs text-gray-400">
-                    Signed in as {user.email}
-                  </p>
+                  <div className="px-3 py-2">
+                    <p className="text-xs font-semibold text-gray-900">{user.name}</p>
+                    <p className="text-xs text-gray-400">{user.email}</p>
+                    {isPremium && (
+                      <span className="inline-block mt-1 text-[10px] bg-indigo-100 text-indigo-700 font-bold px-1.5 py-0.5 rounded uppercase">
+                        Premium
+                      </span>
+                    )}
+                  </div>
+
                   {user.role === 'admin' && (
-                    <Link
-                      href="/admin"
-                      onClick={() => setMenuOpen(false)}
-                      className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50"
-                    >
+                    <Link href="/admin" onClick={() => setMenuOpen(false)}
+                      className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50">
                       Admin Panel
                     </Link>
                   )}
-                  {/* NEW: Mobile My Orders Link */}
-                  <Link
-                    href="/orders"
-                    onClick={() => setMenuOpen(false)}
-                    className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50"
-                  >
-                    My Orders
-                  </Link>
+
+                  {user.role !== 'admin' && (
+                    <Link href="/subscription" onClick={() => setMenuOpen(false)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 ${
+                        isPremium ? 'text-indigo-600' : 'text-gray-600'
+                      }`}>
+                      {isPremium ? '⭐ Premium Member' : '✦ Upgrade to Premium'}
+                    </Link>
+                  )}
+
                   <button
                     onClick={() => { setMenuOpen(false); logout(); }}
                     className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50"
@@ -232,18 +274,12 @@ export default function Navbar() {
                 </>
               ) : (
                 <div className="flex flex-col gap-2 pt-1">
-                  <Link
-                    href="/login"
-                    onClick={() => setMenuOpen(false)}
-                    className="block px-3 py-2 rounded-lg text-sm font-medium text-center border border-gray-200 text-gray-700 hover:bg-gray-50"
-                  >
+                  <Link href="/login" onClick={() => setMenuOpen(false)}
+                    className="block px-3 py-2 rounded-lg text-sm font-medium text-center border border-gray-200 text-gray-700 hover:bg-gray-50">
                     Log in
                   </Link>
-                  <Link
-                    href="/signup"
-                    onClick={() => setMenuOpen(false)}
-                    className="block px-3 py-2 rounded-lg text-sm font-medium text-center bg-indigo-600 text-white hover:bg-indigo-700"
-                  >
+                  <Link href="/signup" onClick={() => setMenuOpen(false)}
+                    className="block px-3 py-2 rounded-lg text-sm font-medium text-center bg-indigo-600 text-white hover:bg-indigo-700">
                     Sign up
                   </Link>
                 </div>
