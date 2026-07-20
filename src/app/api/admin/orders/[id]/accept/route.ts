@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import dbConnect from '@/lib/db';
 import Order from '@/lib/models/Order';
+import { pushUserNotification } from '@/lib/firebase-admin';
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> } // <-- 1. Type as Promise
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.cookies.get('token')?.value;
@@ -20,9 +21,9 @@ export async function POST(
 
     await dbConnect();
 
-    const { id } = await params; // <-- 2. Await the params
+    const { id } = await params;
+    const order = await Order.findById(id);
 
-    const order = await Order.findById(id); // <-- 3. Use the awaited id
     if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
 
     if (order.status !== 'Paid') {
@@ -34,6 +35,14 @@ export async function POST(
 
     order.status = 'Accepted';
     await order.save();
+
+    // Notify the user in real-time via Firebase
+    await pushUserNotification(order.user.toString(), {
+      type: 'order_accepted',
+      title: 'Order Accepted!',
+      message: `Your order #${id.slice(-8).toUpperCase()} has been accepted and is being processed.`,
+      orderId: id,
+    });
 
     return NextResponse.json({ message: 'Order accepted successfully', order });
   } catch (error) {

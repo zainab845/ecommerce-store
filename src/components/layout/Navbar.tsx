@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { useAuth } from '@/context/AuthContext';
+import UserNotificationBell from '@/components/layout/UserNotificationBell';
 
 const navLinks = [
   { label: 'Home', href: '/' },
@@ -59,6 +60,10 @@ export default function Navbar() {
 
           {/* Right side icons */}
           <div className="flex items-center gap-1">
+            {/* User notification bell — only for logged-in non-admin users */}
+{!loading && user && user.role !== 'admin' && (
+  <UserNotificationBell userId={user.id} />
+)}
 
             {/* Wishlist */}
             <Link
