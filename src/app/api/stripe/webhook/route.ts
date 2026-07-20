@@ -27,10 +27,11 @@ export async function POST(request: NextRequest) {
 
     await dbConnect();
 
-    // ── One-time order payment ──────────────────────────────────────────────
+    // ── Checkout Session Completed ──────────────────────────────────────────
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
 
+      // 1. Handle One-time Order Payments
       if (session.mode === 'payment') {
         const orderId = session.metadata?.orderId;
         if (!orderId) return NextResponse.json({ received: true });
@@ -54,6 +55,20 @@ export async function POST(request: NextRequest) {
           message: `${amount} — ready for review`,
           orderId,
         });
+      }
+
+      // 2. Handle Subscription Payments
+      if (session.mode === 'subscription') {
+        const userId = session.metadata?.userId;
+        const subscriptionId = session.subscription as string;
+
+        if (userId && subscriptionId) {
+          await User.findByIdAndUpdate(userId, {
+            'subscription.status': 'active',
+            'subscription.stripeSubscriptionId': subscriptionId,
+          });
+          console.log(`User ${userId} subscription activated via checkout session`);
+        }
       }
     }
 
@@ -79,7 +94,7 @@ export async function POST(request: NextRequest) {
     if (event.type === 'customer.subscription.updated') {
       const subscription = event.data.object as Stripe.Subscription;
 
-      const stripeStatus = subscription.status; // 'active', 'past_due', 'canceled' etc.
+      const stripeStatus = subscription.status;
       const mappedStatus =
         stripeStatus === 'active' ? 'active' :
         stripeStatus === 'past_due' ? 'past_due' :
