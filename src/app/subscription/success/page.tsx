@@ -1,21 +1,77 @@
 'use client';
 export const dynamic = 'force-dynamic';
-import { useEffect, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 
 function SuccessContent() {
   const searchParams = useSearchParams();
-  const { refreshUser } = useAuth();
+  const { refreshUser, isPremium } = useAuth();
+  const [status, setStatus] = useState<'loading' | 'success' | 'timeout'>('loading');
 
   useEffect(() => {
-    // Wait a moment for the webhook to process, then refresh user
-    const timer = setTimeout(async () => {
-      await refreshUser();
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
+    let retries = 0;
+    const maxRetries = 10;
+    let intervalId: NodeJS.Timeout;
+
+    const checkSubscriptionStatus = async () => {
+      try {
+        await refreshUser();
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user?.subscription?.status === 'active' || isPremium) {
+            setStatus('success');
+            clearInterval(intervalId);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Polling error:', error);
+      }
+
+      retries++;
+      if (retries >= maxRetries) {
+        setStatus('timeout');
+        clearInterval(intervalId);
+      }
+    };
+
+    intervalId = setInterval(checkSubscriptionStatus, 2000);
+    checkSubscriptionStatus(); // Run first check immediately
+
+    return () => clearInterval(intervalId);
+  }, [isPremium, refreshUser]);
+
+  if (status === 'loading') {
+    return (
+      <div className="max-w-lg mx-auto px-4 py-24 text-center">
+        <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-6" />
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Activating Subscription...</h1>
+        <p className="text-gray-500">Please wait while we confirm your payment with Stripe.</p>
+      </div>
+    );
+  }
+
+  if (status === 'timeout') {
+    return (
+      <div className="max-w-lg mx-auto px-4 py-24 text-center">
+        <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Still Processing...</h1>
+        <p className="text-gray-500 mb-8">
+          Your payment is taking a little longer to process. Your account will upgrade automatically once Stripe confirms it.
+        </p>
+        <Link href="/" className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors">
+          Return Home
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-lg mx-auto px-4 py-16 sm:py-24 text-center">
