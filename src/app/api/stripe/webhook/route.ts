@@ -5,11 +5,6 @@ import Order from '@/lib/models/Order';
 import User from '@/lib/models/User';
 import { pushNotification } from '@/lib/firebase-admin';
 
-const parseStripeDate = (timestamp: any) => {
-  if (!timestamp) return new Date(); // Fallback to now
-  return new Date(timestamp * 1000);
-};
-
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(request: NextRequest) {
@@ -32,12 +27,12 @@ export async function POST(request: NextRequest) {
 
     await dbConnect();
 
-    // ── Checkout Session Completed ──────────────────────────────────────────
+    // ── checkout.session.completed — covers BOTH payment and subscription ─────
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
 
-      // 1. Handle One-time Order Payments
       if (session.mode === 'payment') {
+        // ── One-time product order ──────────────────────────────────────────
         const orderId = session.metadata?.orderId;
         if (!orderId) return NextResponse.json({ received: true });
 
@@ -62,47 +57,55 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // 2. Handle Subscription Payments
       if (session.mode === 'subscription') {
+        // ── Subscription payment — most reliable place to activate ──────────
         const userId = session.metadata?.userId;
         const subscriptionId = session.subscription as string;
+        const customerId = session.customer as string;
 
         if (userId && subscriptionId) {
+          // Fetch full subscription to get period_end
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
           await User.findByIdAndUpdate(userId, {
             'subscription.status': 'active',
             'subscription.stripeSubscriptionId': subscriptionId,
+            'subscription.stripeCustomerId': customerId,
+            'subscription.currentPeriodEnd': new Date(
+              (subscription as any).current_period_end * 1000
+            ),
           });
-          console.log(`User ${userId} subscription activated via checkout session`);
+
+          console.log(`[webhook] User ${userId} activated Premium via checkout.session.completed`);
         }
       }
     }
 
-    // ── Subscription created ────────────────────────────────────────────────
+    // ── customer.subscription.created — backup activation ────────────────────
     if (event.type === 'customer.subscription.created') {
       const subscription = event.data.object as Stripe.Subscription;
       const userId = subscription.metadata?.userId;
       if (!userId) return NextResponse.json({ received: true });
 
-     await User.findByIdAndUpdate(userId, {
-  $set: {
-    'subscription.status': 'active',
-    'subscription.stripeSubscriptionId': subscription.id,
-    'subscription.stripeCustomerId': subscription.customer as string,
-    // USE THE HELPER HERE
-    'subscription.currentPeriodEnd': parseStripeDate((subscription as any).current_period_end)
-  }
-});
-      console.log(`User ${userId} subscribed to Premium`);
+      await User.findByIdAndUpdate(userId, {
+        'subscription.status': 'active',
+        'subscription.stripeSubscriptionId': subscription.id,
+        'subscription.stripeCustomerId': subscription.customer as string,
+        'subscription.currentPeriodEnd': new Date(
+          (subscription as any).current_period_end * 1000
+        ),
+      });
+
+      console.log(`[webhook] User ${userId} activated via customer.subscription.created`);
     }
 
-    // ── Subscription updated (renewals, status changes) ─────────────────────
+    // ── customer.subscription.updated — renewals and status changes ───────────
     if (event.type === 'customer.subscription.updated') {
       const subscription = event.data.object as Stripe.Subscription;
 
-      const stripeStatus = subscription.status;
       const mappedStatus =
-        stripeStatus === 'active' ? 'active' :
-        stripeStatus === 'past_due' ? 'past_due' :
+        subscription.status === 'active' ? 'active' :
+        subscription.status === 'past_due' ? 'past_due' :
         'cancelled';
 
       await User.findOneAndUpdate(
@@ -116,7 +119,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── Subscription cancelled / deleted ────────────────────────────────────
+    // ── customer.subscription.deleted — final cancellation ────────────────────
     if (event.type === 'customer.subscription.deleted') {
       const subscription = event.data.object as Stripe.Subscription;
 
@@ -124,8 +127,6 @@ export async function POST(request: NextRequest) {
         { 'subscription.stripeSubscriptionId': subscription.id },
         { 'subscription.status': 'cancelled' }
       );
-
-      console.log(`Subscription ${subscription.id} cancelled`);
     }
 
     return NextResponse.json({ received: true });
