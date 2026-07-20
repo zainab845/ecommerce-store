@@ -4,6 +4,10 @@ import { jwtVerify } from 'jose';
 import dbConnect from '@/lib/db';
 import User from '@/lib/models/User';
 
+const parseStripeDate = (timestamp: any) => {
+  if (!timestamp) return new Date(); // Fallback to now
+  return new Date(timestamp * 1000);
+};
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
@@ -28,16 +32,15 @@ export async function POST(request: NextRequest) {
       const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
 
       // Force the MongoDB update immediately
-      await User.findByIdAndUpdate(userId, {
-        $set: {
-          subscription: {
-            status: 'active',
-            stripeSubscriptionId: subscription.id,
-            stripeCustomerId: subscription.customer as string,
-            currentPeriodEnd: new Date((subscription as any).current_period_end * 1000)
-          }
-        }
-      });
+     await User.findByIdAndUpdate(userId, {
+  $set: {
+    'subscription.status': 'active',
+    'subscription.stripeSubscriptionId': subscription.id,
+    'subscription.stripeCustomerId': subscription.customer as string,
+    // USE THE HELPER HERE
+    'subscription.currentPeriodEnd': parseStripeDate((subscription as any).current_period_end)
+  }
+});
 
       return NextResponse.json({ success: true, status: 'active' });
     }

@@ -5,6 +5,11 @@ import Order from '@/lib/models/Order';
 import User from '@/lib/models/User';
 import { pushNotification } from '@/lib/firebase-admin';
 
+const parseStripeDate = (timestamp: any) => {
+  if (!timestamp) return new Date(); // Fallback to now
+  return new Date(timestamp * 1000);
+};
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(request: NextRequest) {
@@ -78,15 +83,15 @@ export async function POST(request: NextRequest) {
       const userId = subscription.metadata?.userId;
       if (!userId) return NextResponse.json({ received: true });
 
-      await User.findByIdAndUpdate(userId, {
-        'subscription.status': 'active',
-        'subscription.stripeSubscriptionId': subscription.id,
-        'subscription.stripeCustomerId': subscription.customer as string,
-        'subscription.currentPeriodEnd': new Date(
-          (subscription as any).current_period_end * 1000
-        ),
-      });
-
+     await User.findByIdAndUpdate(userId, {
+  $set: {
+    'subscription.status': 'active',
+    'subscription.stripeSubscriptionId': subscription.id,
+    'subscription.stripeCustomerId': subscription.customer as string,
+    // USE THE HELPER HERE
+    'subscription.currentPeriodEnd': parseStripeDate((subscription as any).current_period_end)
+  }
+});
       console.log(`User ${userId} subscribed to Premium`);
     }
 
