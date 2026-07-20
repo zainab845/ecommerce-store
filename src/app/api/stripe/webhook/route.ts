@@ -27,11 +27,12 @@ export async function POST(request: NextRequest) {
 
     await dbConnect();
 
-    // ── One-time order payment ──────────────────────────────────────────────
+    // ── checkout.session.completed — covers BOTH payment and subscription ─────
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
 
       if (session.mode === 'payment') {
+        // ── One-time product order ──────────────────────────────────────────
         const orderId = session.metadata?.orderId;
         if (!orderId) return NextResponse.json({ received: true });
 
@@ -55,9 +56,32 @@ export async function POST(request: NextRequest) {
           orderId,
         });
       }
+
+      if (session.mode === 'subscription') {
+        // ── Subscription payment — most reliable place to activate ──────────
+        const userId = session.metadata?.userId;
+        const subscriptionId = session.subscription as string;
+        const customerId = session.customer as string;
+
+        if (userId && subscriptionId) {
+          // Fetch full subscription to get period_end
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
+          await User.findByIdAndUpdate(userId, {
+            'subscription.status': 'active',
+            'subscription.stripeSubscriptionId': subscriptionId,
+            'subscription.stripeCustomerId': customerId,
+            'subscription.currentPeriodEnd': new Date(
+              (subscription as any).current_period_end * 1000
+            ),
+          });
+
+          console.log(`[webhook] User ${userId} activated Premium via checkout.session.completed`);
+        }
+      }
     }
 
-    // ── Subscription created ────────────────────────────────────────────────
+    // ── customer.subscription.created — backup activation ────────────────────
     if (event.type === 'customer.subscription.created') {
       const subscription = event.data.object as Stripe.Subscription;
       const userId = subscription.metadata?.userId;
@@ -72,17 +96,16 @@ export async function POST(request: NextRequest) {
         ),
       });
 
-      console.log(`User ${userId} subscribed to Premium`);
+      console.log(`[webhook] User ${userId} activated via customer.subscription.created`);
     }
 
-    // ── Subscription updated (renewals, status changes) ─────────────────────
+    // ── customer.subscription.updated — renewals and status changes ───────────
     if (event.type === 'customer.subscription.updated') {
       const subscription = event.data.object as Stripe.Subscription;
 
-      const stripeStatus = subscription.status; // 'active', 'past_due', 'canceled' etc.
       const mappedStatus =
-        stripeStatus === 'active' ? 'active' :
-        stripeStatus === 'past_due' ? 'past_due' :
+        subscription.status === 'active' ? 'active' :
+        subscription.status === 'past_due' ? 'past_due' :
         'cancelled';
 
       await User.findOneAndUpdate(
@@ -96,7 +119,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── Subscription cancelled / deleted ────────────────────────────────────
+    // ── customer.subscription.deleted — final cancellation ────────────────────
     if (event.type === 'customer.subscription.deleted') {
       const subscription = event.data.object as Stripe.Subscription;
 
@@ -104,8 +127,6 @@ export async function POST(request: NextRequest) {
         { 'subscription.stripeSubscriptionId': subscription.id },
         { 'subscription.status': 'cancelled' }
       );
-
-      console.log(`Subscription ${subscription.id} cancelled`);
     }
 
     return NextResponse.json({ received: true });
