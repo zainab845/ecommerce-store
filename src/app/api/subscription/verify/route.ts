@@ -29,15 +29,17 @@ export async function GET(request: NextRequest) {
       // 2. Fetch the full subscription details from Stripe
       const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
 
-      // 3. Force the MongoDB update immediately
+    // 3. Force the MongoDB update immediately
       await User.findByIdAndUpdate(userId, {
-        'subscription.status': 'active',
-        'subscription.stripeSubscriptionId': subscription.id,
-        'subscription.stripeCustomerId': subscription.customer as string,
-        // FIX: Cast subscription as any to bypass the Response<T> wrapper typing error
-        'subscription.currentPeriodEnd': new Date((subscription as any).current_period_end * 1000)
+        $set: {
+          subscription: {
+            status: 'active',
+            stripeSubscriptionId: subscription.id,
+            stripeCustomerId: subscription.customer as string,
+            currentPeriodEnd: new Date((subscription as any).current_period_end * 1000)
+          }
+        }
       });
-
       return NextResponse.json({ success: true, status: 'active' });
     }
 
