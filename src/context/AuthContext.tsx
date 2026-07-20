@@ -1,6 +1,12 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
 import { useRouter } from 'next/navigation';
 
 export interface UserSubscription {
@@ -16,6 +22,7 @@ export interface User {
   email: string;
   role: 'user' | 'admin';
   subscription: UserSubscription;
+  authProvider?: 'email' | 'google' | 'both';
 }
 
 interface AuthContextType {
@@ -34,7 +41,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const fetchUser = async () => {
+  // useCallback so refreshUser has a stable reference — safe to include in useEffect deps
+  const fetchUser = useCallback(async () => {
     try {
       const res = await fetch('/api/auth/me');
       const data = res.ok ? await res.json() : null;
@@ -44,9 +52,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // no deps — fetchUser never changes
 
-  useEffect(() => { fetchUser(); }, []);
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
 
   const logout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -54,15 +64,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push('/');
   };
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     await fetchUser();
-  };
+  }, [fetchUser]); // stable because fetchUser is stable
 
-  // Convenience derived value
   const isPremium = user?.subscription?.status === 'active';
 
   return (
-    <AuthContext.Provider value={{ user, loading, isPremium, setUser, logout, refreshUser }}>
+    <AuthContext.Provider
+      value={{ user, loading, isPremium, setUser, logout, refreshUser }}
+    >
       {children}
     </AuthContext.Provider>
   );
