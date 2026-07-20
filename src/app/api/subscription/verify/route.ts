@@ -4,10 +4,14 @@ import { jwtVerify } from 'jose';
 import dbConnect from '@/lib/db';
 import User from '@/lib/models/User';
 
-const parseStripeDate = (timestamp: any) => {
-  if (!timestamp) return new Date(); // Fallback to now
-  return new Date(timestamp * 1000);
-};
+// Safe Date Parser: Returns null if Stripe sends bad data
+function getSafeDate(unixTimestamp: any): Date | null {
+  if (typeof unixTimestamp !== 'number' || isNaN(unixTimestamp)) return null;
+  const date = new Date(unixTimestamp * 1000);
+  if (isNaN(date.getTime())) return null;
+  return date;
+}
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
@@ -30,17 +34,21 @@ export async function POST(request: NextRequest) {
       await dbConnect();
       
       const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+      const safeDate = getSafeDate((subscription as any).current_period_end);
+
+      const updateData: any = {
+        'subscription.status': 'active',
+        'subscription.stripeSubscriptionId': subscription.id,
+        'subscription.stripeCustomerId': subscription.customer as string,
+      };
+
+      // Only attach the date to Mongoose if it is actually a valid Date object
+      if (safeDate) {
+        updateData['subscription.currentPeriodEnd'] = safeDate;
+      }
 
       // Force the MongoDB update immediately
-     await User.findByIdAndUpdate(userId, {
-  $set: {
-    'subscription.status': 'active',
-    'subscription.stripeSubscriptionId': subscription.id,
-    'subscription.stripeCustomerId': subscription.customer as string,
-    // USE THE HELPER HERE
-    'subscription.currentPeriodEnd': parseStripeDate((subscription as any).current_period_end)
-  }
-});
+      await User.findByIdAndUpdate(userId, { $set: updateData });
 
       return NextResponse.json({ success: true, status: 'active' });
     }
