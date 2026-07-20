@@ -51,18 +51,26 @@ export async function POST(request: NextRequest) {
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      line_items: items.map((item: any) => ({
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: item.name + (isPremium ? ' (Premium 10% off)' : ''),
-            // Use short image URL or fallback
-            images: item.image ? [item.image.substring(0, 500)] : undefined, // Truncate long URLs
+      line_items: items.map((item: any) => {
+        let imageUrl = item.image;
+
+        // Validate and shorten image URL
+        if (imageUrl && (typeof imageUrl !== 'string' || !imageUrl.startsWith('http'))) {
+          imageUrl = undefined;
+        }
+
+        return {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: item.name + (isPremium ? ' (Premium 10% off)' : ''),
+              images: imageUrl ? [imageUrl.substring(0, 500)] : undefined,
+            },
+            unit_amount: Math.round(item.price * discountMultiplier * 100),
           },
-          unit_amount: Math.round(item.price * discountMultiplier * 100),
-        },
-        quantity: item.quantity,
-      })),
+          quantity: item.quantity,
+        };
+      }),
       mode: 'payment',
       success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/checkout/cancel`,
