@@ -7,12 +7,14 @@ import { pushNotification } from '@/lib/firebase-admin';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-// Safe Date Parser: Returns null if Stripe sends bad data
-function getSafeDate(unixTimestamp: any): Date | null {
-  if (typeof unixTimestamp !== 'number' || isNaN(unixTimestamp)) return null;
-  const date = new Date(unixTimestamp * 1000);
-  if (isNaN(date.getTime())) return null;
-  return date;
+// Ultra-safe date parser that handles missing data, strings, and bad math
+function getSafeDate(timestamp: any): Date | undefined {
+  if (!timestamp) return undefined;
+  const num = Number(timestamp);
+  if (isNaN(num)) return undefined;
+  
+  const date = new Date(num * 1000);
+  return isNaN(date.getTime()) ? undefined : date;
 }
 
 export async function POST(request: NextRequest) {
@@ -39,7 +41,7 @@ export async function POST(request: NextRequest) {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
 
-      // Product Order
+      // Handle Product Orders
       if (session.mode === 'payment') {
         const orderId = session.metadata?.orderId;
         if (orderId) {
@@ -65,7 +67,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Subscription Order
+      // Handle Subscription Orders
       if (session.mode === 'subscription') {
         const userId = session.metadata?.userId;
         const subscriptionId = session.subscription as string;
@@ -81,10 +83,7 @@ export async function POST(request: NextRequest) {
             'subscription.stripeCustomerId': customerId,
           };
 
-          // Only attach the date to Mongoose if it is actually a valid Date object
-          if (safeDate) {
-            updateData['subscription.currentPeriodEnd'] = safeDate;
-          }
+          if (safeDate) updateData['subscription.currentPeriodEnd'] = safeDate;
 
           await User.findByIdAndUpdate(userId, { $set: updateData });
           console.log(`[webhook] User ${userId} activated Premium`);
@@ -99,16 +98,13 @@ export async function POST(request: NextRequest) {
       
       if (userId) {
         const safeDate = getSafeDate((subscription as any).current_period_end);
-        
         const updateData: any = {
           'subscription.status': 'active',
           'subscription.stripeSubscriptionId': subscription.id,
           'subscription.stripeCustomerId': subscription.customer as string,
         };
 
-        if (safeDate) {
-          updateData['subscription.currentPeriodEnd'] = safeDate;
-        }
+        if (safeDate) updateData['subscription.currentPeriodEnd'] = safeDate;
 
         await User.findByIdAndUpdate(userId, { $set: updateData });
       }
@@ -117,20 +113,18 @@ export async function POST(request: NextRequest) {
     // ── customer.subscription.updated ───────────────────────────────────────
     if (event.type === 'customer.subscription.updated') {
       const subscription = event.data.object as Stripe.Subscription;
+      const safeDate = getSafeDate((subscription as any).current_period_end);
+
       const mappedStatus =
         subscription.status === 'active' ? 'active' :
         subscription.status === 'past_due' ? 'past_due' :
         'cancelled';
 
-      const safeDate = getSafeDate((subscription as any).current_period_end);
-
       const updateData: any = {
         'subscription.status': mappedStatus,
       };
 
-      if (safeDate) {
-        updateData['subscription.currentPeriodEnd'] = safeDate;
-      }
+      if (safeDate) updateData['subscription.currentPeriodEnd'] = safeDate;
 
       await User.findOneAndUpdate(
         { 'subscription.stripeSubscriptionId': subscription.id },
