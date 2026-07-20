@@ -18,10 +18,7 @@ export async function POST(request: NextRequest) {
     const userName = (payload.name as string) || 'Customer';
 
     if (payload.role === 'admin') {
-      return NextResponse.json(
-        { error: 'Admin accounts cannot place orders' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Admin accounts cannot place orders' }, { status: 403 });
     }
 
     const { items, totalAmount, shippingAddress } = await request.json();
@@ -31,12 +28,10 @@ export async function POST(request: NextRequest) {
 
     await dbConnect();
 
-    // Check if user has active premium subscription
     const dbUser = await User.findById(userId).select('subscription').lean() as any;
     const isPremium = dbUser?.subscription?.status === 'active';
-    const discountMultiplier = isPremium ? 0.9 : 1; // 10% off for premium
+    const discountMultiplier = isPremium ? 0.9 : 1;
 
-    // Recalculate actual amount with discount
     const discountedTotal = totalAmount * discountMultiplier;
 
     const order = await Order.create({
@@ -56,19 +51,14 @@ export async function POST(request: NextRequest) {
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      line_items: items.map((item: {
-        name: string;
-        price: number;
-        quantity: number;
-        image?: string;
-      }) => ({
+      line_items: items.map((item: any) => ({
         price_data: {
           currency: 'usd',
           product_data: {
             name: item.name + (isPremium ? ' (Premium 10% off)' : ''),
-            ...(item.image ? { images: [item.image] } : {}),
+            // Use short image URL or fallback
+            images: item.image ? [item.image.substring(0, 500)] : undefined, // Truncate long URLs
           },
-          // Apply discount at the unit level so Stripe receipt is accurate
           unit_amount: Math.round(item.price * discountMultiplier * 100),
         },
         quantity: item.quantity,
