@@ -7,7 +7,7 @@ import User from '@/lib/models/User';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -15,21 +15,19 @@ export async function GET(request: NextRequest) {
     const { payload } = await jwtVerify(token, secret);
     const userId = payload.id as string;
 
-    const searchParams = request.nextUrl.searchParams;
-    const sessionId = searchParams.get('session_id');
+    // Read sessionId from the POST body
+    const { sessionId } = await request.json();
 
     if (!sessionId) return NextResponse.json({ error: 'No session ID provided' }, { status: 400 });
 
-    // 1. Ask Stripe if the payment was actually successful
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
     if (session.payment_status === 'paid' && session.mode === 'subscription') {
       await dbConnect();
       
-      // 2. Fetch the full subscription details from Stripe
       const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
 
-    // 3. Force the MongoDB update immediately
+      // Force the MongoDB update immediately
       await User.findByIdAndUpdate(userId, {
         $set: {
           subscription: {
@@ -40,6 +38,7 @@ export async function GET(request: NextRequest) {
           }
         }
       });
+
       return NextResponse.json({ success: true, status: 'active' });
     }
 
