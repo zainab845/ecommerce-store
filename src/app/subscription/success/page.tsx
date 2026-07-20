@@ -22,7 +22,14 @@ function SuccessContent() {
 
       try {
         // Hit our new robust verification endpoint
-        const res = await fetch(`/api/subscription/verify?session_id=${sessionId}`);
+        // New uncached POST request
+        const res = await fetch('/api/subscription/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ sessionId }),
+        });
         const data = await res.json();
 
         if (res.ok && data.success) {
