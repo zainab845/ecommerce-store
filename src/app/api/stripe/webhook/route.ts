@@ -7,6 +7,16 @@ import { pushNotification } from '@/lib/firebase-admin';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
+// Ultra-safe date parser that handles missing data, strings, and bad math
+function getSafeDate(timestamp: any): Date | undefined {
+  if (!timestamp) return undefined;
+  const num = Number(timestamp);
+  if (isNaN(num)) return undefined;
+  
+  const date = new Date(num * 1000);
+  return isNaN(date.getTime()) ? undefined : date;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
@@ -27,105 +37,108 @@ export async function POST(request: NextRequest) {
 
     await dbConnect();
 
-    // ── checkout.session.completed — covers BOTH payment and subscription ─────
+    // ── checkout.session.completed ──────────────────────────────────────────
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
 
+      // Handle Product Orders
       if (session.mode === 'payment') {
-        // ── One-time product order ──────────────────────────────────────────
         const orderId = session.metadata?.orderId;
-        if (!orderId) return NextResponse.json({ received: true });
+        if (orderId) {
+          const order = await Order.findByIdAndUpdate(
+            orderId,
+            {
+              status: 'Paid',
+              stripePaymentIntentId: session.payment_intent as string,
+            },
+            { new: true }
+          );
 
-        const order = await Order.findByIdAndUpdate(
-          orderId,
-          {
-            status: 'Paid',
-            stripePaymentIntentId: session.payment_intent as string,
-          },
-          { new: true }
-        );
+          const amount = order?.totalAmount
+            ? `$${order.totalAmount.toFixed(2)}`
+            : `$${((session.amount_total ?? 0) / 100).toFixed(2)}`;
 
-        const amount = order?.totalAmount
-          ? `$${order.totalAmount.toFixed(2)}`
-          : `$${((session.amount_total ?? 0) / 100).toFixed(2)}`;
-
-        await pushNotification({
-          type: 'new_order',
-          title: 'New Order Received',
-          message: `${amount} — ready for review`,
-          orderId,
-        });
+          await pushNotification({
+            type: 'new_order',
+            title: 'New Order Received',
+            message: `${amount} — ready for review`,
+            orderId,
+          });
+        }
       }
 
+      // Handle Subscription Orders
       if (session.mode === 'subscription') {
-        // ── Subscription payment — most reliable place to activate ──────────
         const userId = session.metadata?.userId;
         const subscriptionId = session.subscription as string;
         const customerId = session.customer as string;
 
         if (userId && subscriptionId) {
-          // Fetch full subscription to get period_end
           const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          const safeDate = getSafeDate((subscription as any).current_period_end);
 
-          await User.findByIdAndUpdate(userId, {
+          const updateData: any = {
             'subscription.status': 'active',
             'subscription.stripeSubscriptionId': subscriptionId,
             'subscription.stripeCustomerId': customerId,
-            'subscription.currentPeriodEnd': new Date(
-              (subscription as any).current_period_end * 1000
-            ),
-          });
+          };
 
-          console.log(`[webhook] User ${userId} activated Premium via checkout.session.completed`);
+          if (safeDate) updateData['subscription.currentPeriodEnd'] = safeDate;
+
+          await User.findByIdAndUpdate(userId, { $set: updateData });
+          console.log(`[webhook] User ${userId} activated Premium`);
         }
       }
     }
 
-    // ── customer.subscription.created — backup activation ────────────────────
+    // ── customer.subscription.created ───────────────────────────────────────
     if (event.type === 'customer.subscription.created') {
       const subscription = event.data.object as Stripe.Subscription;
       const userId = subscription.metadata?.userId;
-      if (!userId) return NextResponse.json({ received: true });
+      
+      if (userId) {
+        const safeDate = getSafeDate((subscription as any).current_period_end);
+        const updateData: any = {
+          'subscription.status': 'active',
+          'subscription.stripeSubscriptionId': subscription.id,
+          'subscription.stripeCustomerId': subscription.customer as string,
+        };
 
-      await User.findByIdAndUpdate(userId, {
-        'subscription.status': 'active',
-        'subscription.stripeSubscriptionId': subscription.id,
-        'subscription.stripeCustomerId': subscription.customer as string,
-        'subscription.currentPeriodEnd': new Date(
-          (subscription as any).current_period_end * 1000
-        ),
-      });
+        if (safeDate) updateData['subscription.currentPeriodEnd'] = safeDate;
 
-      console.log(`[webhook] User ${userId} activated via customer.subscription.created`);
+        await User.findByIdAndUpdate(userId, { $set: updateData });
+      }
     }
 
-    // ── customer.subscription.updated — renewals and status changes ───────────
+    // ── customer.subscription.updated ───────────────────────────────────────
     if (event.type === 'customer.subscription.updated') {
       const subscription = event.data.object as Stripe.Subscription;
+      const safeDate = getSafeDate((subscription as any).current_period_end);
 
       const mappedStatus =
         subscription.status === 'active' ? 'active' :
         subscription.status === 'past_due' ? 'past_due' :
         'cancelled';
 
+      const updateData: any = {
+        'subscription.status': mappedStatus,
+      };
+
+      if (safeDate) updateData['subscription.currentPeriodEnd'] = safeDate;
+
       await User.findOneAndUpdate(
         { 'subscription.stripeSubscriptionId': subscription.id },
-        {
-          'subscription.status': mappedStatus,
-          'subscription.currentPeriodEnd': new Date(
-            (subscription as any).current_period_end * 1000
-          ),
-        }
+        { $set: updateData }
       );
     }
 
-    // ── customer.subscription.deleted — final cancellation ────────────────────
+    // ── customer.subscription.deleted ───────────────────────────────────────
     if (event.type === 'customer.subscription.deleted') {
       const subscription = event.data.object as Stripe.Subscription;
 
       await User.findOneAndUpdate(
         { 'subscription.stripeSubscriptionId': subscription.id },
-        { 'subscription.status': 'cancelled' }
+        { $set: { 'subscription.status': 'cancelled' } }
       );
     }
 

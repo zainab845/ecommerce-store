@@ -16,7 +16,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('token')?.value;
 
-  // === ADMIN ROUTES ===
+  // ── Admin routes ──────────────────────────────────────────────────────────
   if (pathname.startsWith('/admin')) {
     if (pathname === '/admin/login') {
       if (token) {
@@ -38,7 +38,27 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // === USER ROUTES ===
+  // ── Protected user routes ─────────────────────────────────────────────────
+  if (
+    pathname.startsWith('/orders') ||
+    pathname === '/settings'
+  ) {
+    if (!token) {
+      const from = encodeURIComponent(pathname);
+      return NextResponse.redirect(new URL(`/login?from=${from}`, request.url));
+    }
+    const payload = await getPayload(token);
+    if (!payload) {
+      const from = encodeURIComponent(pathname);
+      return NextResponse.redirect(new URL(`/login?from=${from}`, request.url));
+    }
+    // Admins shouldn't use user-facing order/settings pages
+    if (pathname.startsWith('/orders') && payload.role === 'admin') {
+      return NextResponse.redirect(new URL('/admin/orders', request.url));
+    }
+  }
+
+  // ── Redirect logged-in users away from login/signup ───────────────────────
   if (pathname === '/login' || pathname === '/signup') {
     if (token) {
       const payload = await getPayload(token);
@@ -54,9 +74,10 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/admin/:path*', 
-    '/login', 
+    '/admin/:path*',
+    '/orders/:path*',
+    '/settings',
+    '/login',
     '/signup',
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };
