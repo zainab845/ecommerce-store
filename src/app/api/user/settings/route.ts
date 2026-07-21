@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
+import jwt from 'jsonwebtoken'; // <-- Added to sign the new cookie
 import dbConnect from '@/lib/db';
 import User from '@/lib/models/User';
+
+export const dynamic = 'force-dynamic'; // <-- Bypasses Vercel caching
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
@@ -71,10 +74,33 @@ export async function PATCH(request: NextRequest) {
     if (email?.trim()) update.email = email.toLowerCase().trim();
 
     const updated = await User.findByIdAndUpdate(payload.id, update, { new: true })
-      .select('name email authProvider')
+      .select('name email authProvider role') // <-- Ensure role is fetched
       .lean() as any;
 
-    return NextResponse.json({ user: updated });
+    // 🚨 THE FIX: Create a fresh token with the new name/email
+    const newToken = jwt.sign(
+      { 
+        id: updated._id, 
+        name: updated.name, 
+        email: updated.email, 
+        role: updated.role || payload.role 
+      },
+      process.env.JWT_SECRET!,
+      { expiresIn: '7d' }
+    );
+
+    const response = NextResponse.json({ user: updated });
+    
+    // Set the new cookie so the frontend sees the changes instantly
+    response.cookies.set('token', newToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60,
+      path: '/',
+    });
+
+    return response;
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
