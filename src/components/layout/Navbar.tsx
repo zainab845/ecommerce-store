@@ -60,10 +60,11 @@ export default function Navbar() {
 
           {/* Right side icons */}
           <div className="flex items-center gap-1">
-            {/* User notification bell — only for logged-in non-admin users */}
-{!loading && user && user.role !== 'admin' && (
-  <UserNotificationBell userId={user.id} />
-)}
+
+            {/* User notification bell */}
+            {!loading && user && user.role !== 'admin' && (
+              <UserNotificationBell userId={user.id} />
+            )}
 
             {/* Wishlist */}
             <Link
@@ -82,7 +83,7 @@ export default function Navbar() {
               )}
             </Link>
 
-            {/* Cart — proper shopping cart icon */}
+            {/* Cart */}
             <Link
               href="/cart"
               className="relative p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
@@ -108,7 +109,6 @@ export default function Navbar() {
                       onClick={() => setProfileOpen(!profileOpen)}
                       className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                     >
-                      {/* Avatar with premium ring */}
                       <span className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center ${
                         isPremium
                           ? 'bg-gradient-to-br from-indigo-500 to-indigo-700 text-white ring-2 ring-indigo-300 ring-offset-1'
@@ -128,48 +128,66 @@ export default function Navbar() {
                     </button>
 
                     {profileOpen && (
-                      <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50">
-                        <div className="px-4 py-2 border-b border-gray-50">
+                      <div className="absolute right-0 mt-1 w-52 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50">
+                        {/* User info */}
+                        <div className="px-4 py-2.5 border-b border-gray-50">
                           <p className="text-xs font-semibold text-gray-900 truncate">{user.name}</p>
                           <p className="text-xs text-gray-400 truncate">{user.email}</p>
                         </div>
 
+                        {/* Admin panel link */}
                         {user.role === 'admin' && (
-                          <Link
-                            href="/admin"
-                            onClick={() => setProfileOpen(false)}
-                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                          >
+                          <Link href="/admin" onClick={() => setProfileOpen(false)}
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                             Admin Panel
                           </Link>
                         )}
 
-                        {/* Premium link — only for non-admin users */}
+                        {/* User-only links */}
                         {user.role !== 'admin' && (
-                          <Link
-                            href="/subscription"
-                            onClick={() => setProfileOpen(false)}
-                            className={`flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 ${
-                              isPremium ? 'text-indigo-600 font-semibold' : 'text-gray-700'
-                            }`}
-                          >
-                            {isPremium ? (
-                              <>
-                                <svg className="w-3.5 h-3.5 text-indigo-500" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                                </svg>
-                                Premium Member
-                              </>
-                            ) : (
-                              <>
-                                <svg className="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                                </svg>
-                                Upgrade to Premium
-                              </>
-                            )}
-                          </Link>
+                          <>
+                            <Link href="/orders" onClick={() => setProfileOpen(false)}
+                              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                              <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                  d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                              </svg>
+                              My Orders
+                            </Link>
+
+                            <Link href="/settings" onClick={() => setProfileOpen(false)}
+                              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                              <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              Settings
+                            </Link>
+
+                            <Link href="/subscription" onClick={() => setProfileOpen(false)}
+                              className={`flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 ${
+                                isPremium ? 'text-indigo-600 font-semibold' : 'text-gray-700'
+                              }`}>
+                              {isPremium ? (
+                                <>
+                                  <svg className="w-3.5 h-3.5 text-indigo-500" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                  </svg>
+                                  Premium Member
+                                </>
+                              ) : (
+                                <>
+                                  <svg className="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                      d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                  </svg>
+                                  Upgrade to Premium
+                                </>
+                              )}
+                            </Link>
+                          </>
                         )}
 
                         <hr className="my-1 border-gray-100" />
@@ -184,16 +202,12 @@ export default function Navbar() {
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <Link
-                      href="/login"
-                      className="px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
-                    >
+                    <Link href="/login"
+                      className="px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
                       Log in
                     </Link>
-                    <Link
-                      href="/signup"
-                      className="px-3 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                    >
+                    <Link href="/signup"
+                      className="px-3 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
                       Sign up
                     </Link>
                   </div>
@@ -263,12 +277,24 @@ export default function Navbar() {
                   )}
 
                   {user.role !== 'admin' && (
-                    <Link href="/subscription" onClick={() => setMenuOpen(false)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 ${
-                        isPremium ? 'text-indigo-600' : 'text-gray-600'
-                      }`}>
-                      {isPremium ? '⭐ Premium Member' : '✦ Upgrade to Premium'}
-                    </Link>
+                    <>
+                      <Link href="/orders" onClick={() => setMenuOpen(false)}
+                        className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50">
+                        My Orders
+                      </Link>
+
+                      <Link href="/settings" onClick={() => setMenuOpen(false)}
+                        className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50">
+                        Settings
+                      </Link>
+
+                      <Link href="/subscription" onClick={() => setMenuOpen(false)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 ${
+                          isPremium ? 'text-indigo-600' : 'text-gray-600'
+                        }`}>
+                        {isPremium ? '⭐ Premium Member' : '✦ Upgrade to Premium'}
+                      </Link>
+                    </>
                   )}
 
                   <button
