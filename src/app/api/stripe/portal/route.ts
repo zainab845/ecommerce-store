@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     // Generate the secure Stripe portal session
     const session = await stripe.billingPortal.sessions.create({
       customer: user.subscription.stripeCustomerId,
-      return_url: `${baseUrl}/subscription`, // Sends them back to your site after they are done
+      return_url: `${baseUrl}/settings`, // Sends them back to your site after they are done
     });
 
     return NextResponse.json({ url: session.url });
