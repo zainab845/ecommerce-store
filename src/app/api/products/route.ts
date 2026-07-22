@@ -1,17 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllProducts } from '@/lib/controllers/productController';
-import { unstable_cache } from 'next/cache';
 
-const getCachedProducts = unstable_cache(
-  async (params: any) => {
-    return getAllProducts(params);
-  },
-  ['products-list'],                    // Cache key prefix
-  { 
-    revalidate: 60,                     // Revalidate every 60 seconds
-    tags: ['products'] 
-  }
-);
+// Natively cache the route for 60 seconds (Handles unique query params automatically!)
+export const revalidate = 60;
 
 export async function GET(request: NextRequest) {
   const start = Date.now();
@@ -23,11 +14,13 @@ export async function GET(request: NextRequest) {
       category: searchParams.get('category') ?? undefined,
       search: searchParams.get('search') ?? undefined,
       sort: searchParams.get('sort') ?? undefined,
+      featured: searchParams.get('featured') ?? undefined, // Added this so the homepage filter works!
       limit: parseInt(searchParams.get('limit') ?? '12'),
       page: parseInt(searchParams.get('page') ?? '1'),
     };
 
-    const result = await getCachedProducts(params);
+    // Call your flawless controller directly
+    const result = await getAllProducts(params);
 
     console.log(`[API /products] took ${Date.now() - start}ms`);
 

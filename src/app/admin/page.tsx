@@ -4,6 +4,7 @@ import Order from '@/lib/models/Order';
 import mongoose from 'mongoose';
 import NotificationBell from './NotificationBell';
 import RevenueChart from '@/components/admin/RevenueChart';
+export const dynamic = 'force-dynamic';
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
 async function getDashboardData() {
