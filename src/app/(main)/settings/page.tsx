@@ -250,10 +250,14 @@ export default function SettingsPage() {
                 className={inputClass} placeholder="Your full name" />
             </div>
             <div>
-              <label className={labelClass}>Email Address</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                className={inputClass} placeholder="your@email.com" />
-            </div>
+  <label className={labelClass}>Email Address</label>
+  <input 
+    type="email" 
+    value={email} 
+    disabled 
+    className={`${inputClass} bg-gray-50 opacity-70 cursor-not-allowed`} // <-- Add visual feedback
+  />
+</div>
             {profileMessage && (
               <div className={`px-4 py-3 rounded-xl text-sm font-medium ${
                 profileMessage.ok

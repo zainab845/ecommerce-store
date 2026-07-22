@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PATCH — update name and/or email
+// PATCH — update name 
 export async function PATCH(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;
@@ -44,34 +44,20 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
     }
 
-    const { name, email } = body;
+    const { name } = body;
 
-    if (!name?.trim() && !email?.trim()) {
+    if (!name?.trim() ) {
       return NextResponse.json(
-        { error: 'Provide at least one field to update' },
+        { error: 'Provide a name to update' },
         { status: 400 }
       );
     }
 
     await dbConnect();
 
-    // Check email uniqueness if changing
-    if (email) {
-      const existing = await User.findOne({
-        email: email.toLowerCase(),
-        _id: { $ne: payload.id },
-      }).lean();
-      if (existing) {
-        return NextResponse.json(
-          { error: 'This email is already in use' },
-          { status: 400 }
-        );
-      }
-    }
 
     const update: Record<string, string> = {};
     if (name?.trim()) update.name = name.trim();
-    if (email?.trim()) update.email = email.toLowerCase().trim();
 
     const updated = await User.findByIdAndUpdate(payload.id, update, { new: true })
       .select('name email authProvider role') // <-- Ensure role is fetched
