@@ -30,6 +30,7 @@ export default function SettingsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const [fullUser, setFullUser] = useState<any>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -43,6 +44,23 @@ export default function SettingsPage() {
 
   const isGoogleOnly = fullUser?.authProvider === 'google';
 
+  const handleManageSubscription = async () => {
+    setPortalLoading(true);
+    try {
+      const res = await fetch('/api/stripe/portal', { method: 'POST' });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || 'Failed to load portal');
+      }
+    } catch (error) {
+      alert('Something went wrong.');
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
   const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setProfileMessage(null);
@@ -51,7 +69,7 @@ export default function SettingsPage() {
       const res = await fetch('/api/user/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), email: email.trim() }),
+        body: JSON.stringify({ name: name.trim() }), // Only send name
       });
       const data = await res.json();
       if (res.ok) {
@@ -144,7 +162,6 @@ export default function SettingsPage() {
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
       <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8">Settings</h1>
 
-      {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 p-1 rounded-xl mb-8 w-fit">
         {tabs.map(tab => (
           <button
@@ -161,7 +178,6 @@ export default function SettingsPage() {
         ))}
       </div>
 
-      {/* ── Profile Tab ──────────────────────────────────────────────── */}
       {activeTab === 'profile' && (
         <div className="space-y-6">
           {isPremium && (
@@ -173,14 +189,17 @@ export default function SettingsPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-indigo-900">Premium Member</p>
-                <Link href="/subscription" className="text-xs text-indigo-600 hover:underline">
-                  Manage subscription →
-                </Link>
+                <button 
+                  onClick={handleManageSubscription}
+                  disabled={portalLoading}
+                  className="text-xs text-indigo-600 hover:underline font-medium text-left"
+                >
+                  {portalLoading ? 'Opening Portal...' : 'Manage subscription →'}
+                </button>
               </div>
             </div>
           )}
 
-          {/* Connected accounts */}
           {fullUser && (
             <div className="bg-white border border-gray-100 rounded-2xl p-5">
               <h2 className="text-sm font-semibold text-gray-900 mb-4">Connected Accounts</h2>
@@ -190,7 +209,7 @@ export default function SettingsPage() {
                   <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
                     <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v10a2 2 0 002 2z" />
                     </svg>
                   </div>
                   <div>
@@ -211,7 +230,6 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 flex items-center justify-center">
-                    {/* Google G logo */}
                     <svg viewBox="0 0 24 24" className="w-5 h-5">
                       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
                       <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
@@ -229,11 +247,7 @@ export default function SettingsPage() {
                     Connected
                   </span>
                 ) : (
-                  
-                  <a
-                    href="/api/auth/google?from=/settings"
-                    className="text-xs font-medium px-3 py-1.5 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
+                  <a href="/api/auth/google?from=/settings" className="text-xs font-medium px-3 py-1.5 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
                     Connect
                   </a>
                 )}
@@ -241,7 +255,6 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Profile form */}
           <form onSubmit={handleProfileSave} className="bg-white border border-gray-100 rounded-2xl p-5 space-y-4">
             <h2 className="text-sm font-semibold text-gray-900">Personal Information</h2>
             <div>
@@ -249,15 +262,15 @@ export default function SettingsPage() {
               <input type="text" value={name} onChange={e => setName(e.target.value)}
                 className={inputClass} placeholder="Your full name" />
             </div>
+            
+            {/* The Email Field is now fully disabled and styled differently */}
             <div>
-  <label className={labelClass}>Email Address</label>
-  <input 
-    type="email" 
-    value={email} 
-    disabled 
-    className={`${inputClass} bg-gray-50 opacity-70 cursor-not-allowed`} // <-- Add visual feedback
-  />
-</div>
+              <label className={labelClass}>Email Address</label>
+              <input type="email" value={email} disabled
+                className={`${inputClass} bg-gray-50 opacity-70 cursor-not-allowed`} placeholder="your@email.com" />
+              <p className="text-xs text-gray-400 mt-1">Email addresses cannot be changed.</p>
+            </div>
+
             {profileMessage && (
               <div className={`px-4 py-3 rounded-xl text-sm font-medium ${
                 profileMessage.ok
@@ -275,7 +288,6 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* ── Security Tab ─────────────────────────────────────────────── */}
       {activeTab === 'security' && (
         <form onSubmit={handlePasswordChange}
           className="bg-white border border-gray-100 rounded-2xl p-5 space-y-4">
@@ -328,7 +340,6 @@ export default function SettingsPage() {
         </form>
       )}
 
-      {/* ── Account Tab ──────────────────────────────────────────────── */}
       {activeTab === 'account' && (
         <div className="space-y-6">
           <div className="bg-white border border-gray-100 rounded-2xl p-5">
