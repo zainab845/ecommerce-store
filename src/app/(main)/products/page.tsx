@@ -73,6 +73,9 @@ function ProductsContent() {
 
   // Debounce search input
   useEffect(() => {
+    const currentSearch = searchParams.get('search') ?? '';
+    if (searchInput === currentSearch) return;
+
     const timer = setTimeout(() => {
       const params = new URLSearchParams(searchParams.toString());
       if (searchInput) {
@@ -80,7 +83,7 @@ function ProductsContent() {
       } else {
         params.delete('search');
       }
-      params.delete('page'); // reset to page 1 on new search
+      params.delete('page'); // reset to page 1 ONLY on new search
       router.push(`/products?${params.toString()}`);
     }, 400);
 
