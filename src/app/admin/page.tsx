@@ -11,13 +11,13 @@ async function getDashboardData() {
 
   const UserModel =
     mongoose.models.User ||
-    mongoose.model('User', new mongoose.Schema({ role: String }));
+    mongoose.model('User', new mongoose.Schema({ role: String, subscription: Object }, { strict: false }));
 
   const ProductModel =
     mongoose.models.Product ||
     mongoose.model('Product', new mongoose.Schema({}));
 
-  const [totalOrders, totalUsers, totalProducts, allOrders, recentOrders] =
+  const [totalOrders, totalUsers, totalProducts, allOrders, recentOrders, activeSubscribers] =
     await Promise.all([
       Order.countDocuments(),
       UserModel.countDocuments({ role: 'user' }),
@@ -29,14 +29,33 @@ async function getDashboardData() {
         .populate('user', 'name')
         .select('user totalAmount status createdAt')
         .lean(),
+      UserModel.countDocuments({ 'subscription.status': 'active' }), // <-- Fetch active subs
     ]);
 
-  const totalRevenue = allOrders.reduce(
-    (sum, o) => sum + (o.totalAmount as number || 0),
+  // Calculate Product Revenue
+  const productRevenue = allOrders.reduce(
+    (sum, o) => sum + ((o.totalAmount as number) || 0),
     0
   );
 
-  return { totalOrders, totalUsers, totalProducts, totalRevenue, recentOrders, allOrders };
+  // Calculate Subscription Revenue
+  const subscriptionPrice = 9.99; // Change this if your price is different
+  const subscriptionRevenue = activeSubscribers * subscriptionPrice;
+
+  // Calculate Total Revenue
+  const totalRevenue = productRevenue + subscriptionRevenue;
+
+  return { 
+    totalOrders, 
+    totalUsers, 
+    totalProducts, 
+    productRevenue, 
+    subscriptionRevenue, 
+    totalRevenue, 
+    recentOrders, 
+    allOrders,
+    activeSubscribers 
+  };
 }
 
 // ─── Revenue aggregation ──────────────────────────────────────────────────────
@@ -88,13 +107,15 @@ async function getRevenueData() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default async function AdminDashboard() {
   const [
-    { totalOrders, totalUsers, totalProducts, totalRevenue, recentOrders },
+    { totalOrders, totalUsers, totalProducts, productRevenue, subscriptionRevenue, totalRevenue, recentOrders },
     revenueData,
   ] = await Promise.all([getDashboardData(), getRevenueData()]);
 
   const stats = [
     { label: 'Total Revenue', value: `$${totalRevenue.toFixed(2)}`, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Total Orders', value: totalOrders, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Product Revenue', value: `$${productRevenue.toFixed(2)}`, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Sub Revenue', value: `$${subscriptionRevenue.toFixed(2)}`, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Total Orders', value: totalOrders, color: 'text-cyan-600', bg: 'bg-cyan-50' },
     { label: 'Total Users', value: totalUsers, color: 'text-violet-600', bg: 'bg-violet-50' },
     { label: 'Total Products', value: totalProducts, color: 'text-amber-600', bg: 'bg-amber-50' },
   ];
@@ -110,12 +131,12 @@ export default async function AdminDashboard() {
         <NotificationBell />
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      {/* Stat cards - updated grid to fit 6 cards perfectly */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
         {stats.map((stat, i) => (
           <div key={i} className={`${stat.bg} rounded-2xl p-4 sm:p-6 border border-white`}>
             <p className="text-xs sm:text-sm text-gray-500 font-medium">{stat.label}</p>
-            <p className={`text-2xl sm:text-4xl font-bold mt-2 ${stat.color}`}>{stat.value}</p>
+            <p className={`text-xl sm:text-2xl font-bold mt-2 ${stat.color}`}>{stat.value}</p>
           </div>
         ))}
       </div>

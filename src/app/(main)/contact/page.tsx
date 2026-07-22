@@ -1,8 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useAuth } from '@/context/AuthContext'; // <-- 1. Import useAuth
 
 export default function ContactPage() {
+  const { user } = useAuth(); // <-- 2. Get the current user
+  
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -52,7 +55,14 @@ export default function ContactPage() {
         <p className="text-gray-600 mt-3 text-lg">We'd love to hear from you</p>
       </div>
 
-      {success ? (
+      {/* 3. Check for admin role before showing the form or success state */}
+      {user?.role === 'admin' ? (
+        <div className="text-center py-12 bg-amber-50 rounded-3xl border border-amber-100">
+          <div className="text-5xl mb-4">🛡️</div>
+          <h2 className="text-2xl font-semibold text-amber-800">Admin Account Detected</h2>
+          <p className="text-amber-700 mt-3">Administrators cannot submit customer support inquiries.</p>
+        </div>
+      ) : success ? (
         <div className="text-center py-12 bg-green-50 rounded-3xl">
           <div className="text-6xl mb-4">✅</div>
           <h2 className="text-2xl font-semibold text-green-800">Message Sent!</h2>

@@ -18,7 +18,7 @@ const navLinks = [
 function isActive(pathname: string | null, href: string): boolean {
   if (!pathname) return false;
   if (href === '/') return pathname === '/';
-  return pathname.startsWith(href);
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export default function Navbar() {
