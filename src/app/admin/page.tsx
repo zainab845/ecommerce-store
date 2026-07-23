@@ -65,42 +65,49 @@ async function getRevenueData() {
 
   const now = new Date();
   const currentYear = now.getFullYear();
+  const SUB_PRICE = 9.99;
 
-  // Monthly — current year
-  const monthlyRaw = await Order.aggregate([
-    { $match: { createdAt: { $gte: new Date(currentYear, 0, 1) } } },
+  // Monthly — current year products
+  const productMonthlyRaw = await Order.aggregate([
+    { $match: { createdAt: { $gte: new Date(currentYear, 0, 1) }, status: 'Paid' } },
     { $group: { _id: { $month: '$createdAt' }, revenue: { $sum: '$totalAmount' } } },
-    { $sort: { _id: 1 } },
   ]);
 
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  // Monthly — current year subscriptions
+  const UserModel = mongoose.models.User;
+  const subMonthlyRaw = await UserModel.aggregate([
+    { $match: { 'subscription.status': 'active', createdAt: { $gte: new Date(currentYear, 0, 1) } } },
+    { $group: { _id: { $month: '$createdAt' }, count: { $sum: 1 } } }
+  ]);
+
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   const monthly = monthNames.map((name, idx) => {
-    const found = monthlyRaw.find((d: any) => d._id === idx + 1);
-    return { name, revenue: found?.revenue ?? 0 };
+    const pFound = productMonthlyRaw.find((d: any) => d._id === idx + 1);
+    const sFound = subMonthlyRaw.find((d: any) => d._id === idx + 1);
+    return { 
+      name, 
+      productRevenue: pFound?.revenue ?? 0,
+      subRevenue: (sFound?.count ?? 0) * SUB_PRICE 
+    };
   });
 
   // Quarterly — derived from monthly
   const quarterly = [
-    { name: 'Q1', revenue: monthly.slice(0, 3).reduce((s, d) => s + d.revenue, 0) },
-    { name: 'Q2', revenue: monthly.slice(3, 6).reduce((s, d) => s + d.revenue, 0) },
-    { name: 'Q3', revenue: monthly.slice(6, 9).reduce((s, d) => s + d.revenue, 0) },
-    { name: 'Q4', revenue: monthly.slice(9, 12).reduce((s, d) => s + d.revenue, 0) },
+    { name: 'Q1', productRevenue: monthly.slice(0, 3).reduce((s, d) => s + d.productRevenue, 0), subRevenue: monthly.slice(0, 3).reduce((s, d) => s + d.subRevenue, 0) },
+    { name: 'Q2', productRevenue: monthly.slice(3, 6).reduce((s, d) => s + d.productRevenue, 0), subRevenue: monthly.slice(3, 6).reduce((s, d) => s + d.subRevenue, 0) },
+    { name: 'Q3', productRevenue: monthly.slice(6, 9).reduce((s, d) => s + d.productRevenue, 0), subRevenue: monthly.slice(6, 9).reduce((s, d) => s + d.subRevenue, 0) },
+    { name: 'Q4', productRevenue: monthly.slice(9, 12).reduce((s, d) => s + d.productRevenue, 0), subRevenue: monthly.slice(9, 12).reduce((s, d) => s + d.subRevenue, 0) },
   ];
 
   // Yearly — past 5 years
-  const yearlyRaw = await Order.aggregate([
-    { $match: { createdAt: { $gte: new Date(currentYear - 4, 0, 1) } } },
-    { $group: { _id: { $year: '$createdAt' }, revenue: { $sum: '$totalAmount' } } },
-    { $sort: { _id: 1 } },
-  ]);
-
-  const yearly = Array.from({ length: 5 }, (_, i) => {
-    const year = currentYear - 4 + i;
-    const found = yearlyRaw.find((d: any) => d._id === year);
-    return { name: String(year), revenue: found?.revenue ?? 0 };
-  });
+  const yearly = [
+    { 
+      name: String(currentYear), 
+      productRevenue: quarterly.reduce((s, d) => s + d.productRevenue, 0), 
+      subRevenue: quarterly.reduce((s, d) => s + d.subRevenue, 0) 
+    }
+  ];
 
   return { monthly, quarterly, yearly };
 }
