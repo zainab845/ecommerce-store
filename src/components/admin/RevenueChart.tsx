@@ -92,7 +92,7 @@ export default function RevenueChart({ monthly, quarterly, yearly }: Props) {
 <Tooltip
   formatter={(value: any, name: any) => [
     `$${Number(value).toFixed(2)}`,
-    name === 'productRevenue' ? 'Products' : 'Subscriptions'
+    name // This directly uses the "Products" or "Subscriptions" label
   ]}
   contentStyle={{
     borderRadius: '12px',

@@ -30,7 +30,6 @@ export default function SettingsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const [fullUser, setFullUser] = useState<any>(null);
-  const [portalLoading, setPortalLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -44,23 +43,6 @@ export default function SettingsPage() {
 
   const isGoogleOnly = fullUser?.authProvider === 'google';
 
-  const handleManageSubscription = async () => {
-    setPortalLoading(true);
-    try {
-      const res = await fetch('/api/stripe/portal', { method: 'POST' });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert(data.error || 'Failed to load portal');
-      }
-    } catch (error) {
-      alert('Something went wrong.');
-    } finally {
-      setPortalLoading(false);
-    }
-  };
-
   const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setProfileMessage(null);
@@ -69,7 +51,7 @@ export default function SettingsPage() {
       const res = await fetch('/api/user/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim() }), // Only send name
+        body: JSON.stringify({ name: name.trim() }), 
       });
       const data = await res.json();
       if (res.ok) {
@@ -189,13 +171,13 @@ export default function SettingsPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-indigo-900">Premium Member</p>
-                <button 
-                  onClick={handleManageSubscription}
-                  disabled={portalLoading}
-                  className="text-xs text-indigo-600 hover:underline font-medium text-left"
+                {/* Fixed: Replaced Stripe portal trigger with native Next.js Link */}
+                <Link 
+                  href="/subscription"
+                  className="text-xs text-indigo-600 hover:underline font-medium text-left block mt-0.5"
                 >
-                  {portalLoading ? 'Opening Portal...' : 'Manage subscription →'}
-                </button>
+                  View subscription details →
+                </Link>
               </div>
             </div>
           )}
@@ -263,7 +245,6 @@ export default function SettingsPage() {
                 className={inputClass} placeholder="Your full name" />
             </div>
             
-            {/* The Email Field is now fully disabled and styled differently */}
             <div>
               <label className={labelClass}>Email Address</label>
               <input type="email" value={email} disabled
@@ -437,7 +418,7 @@ export default function SettingsPage() {
                 </div>
               </div>
             )}
-          </div>
+          </div> 
         </div>
       )}
     </div>
