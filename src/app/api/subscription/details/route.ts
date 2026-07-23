@@ -35,17 +35,22 @@ export async function GET(request: NextRequest) {
     const sub: any = subscriptions.data[0];
     
     // 2. Extract the price directly from the subscription object 
-    
     const amountInCents = sub.items?.data?.[0]?.price?.unit_amount || 999;
     const currency = sub.items?.data?.[0]?.price?.currency || 'usd';
+
+    // 3. SAFELY handle the date. If Stripe omits it, fallback gracefully.
+    const periodEndTimestamp = sub.current_period_end;
+    const safePeriodEnd = typeof periodEndTimestamp === 'number' 
+      ? new Date(periodEndTimestamp * 1000).toISOString() 
+      : new Date().toISOString(); // Fallback to current date to prevent crashes
 
     return NextResponse.json({
       status: sub.status,
       planName: 'Premium',
       amount: amountInCents / 100, // Convert cents to dollars
       currency: currency,
-      currentPeriodEnd: new Date(sub.current_period_end * 1000).toISOString(),
-      cancelAtPeriodEnd: sub.cancel_at_period_end,
+      currentPeriodEnd: safePeriodEnd,
+      cancelAtPeriodEnd: !!sub.cancel_at_period_end, // Force boolean
     });
 
   } catch (error) {
