@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ status: 'free' });
     }
 
+    // 1. Fetch the active subscription
     const subscriptions = await stripe.subscriptions.list({
       customer: user.subscription.stripeCustomerId,
       status: 'active',
@@ -31,18 +32,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ status: 'inactive' });
     }
 
-    // Cast to 'any' to bypass strict TS checking for the newer Stripe SDK version
     const sub: any = subscriptions.data[0];
     
-    const upcomingInvoice: any = await (stripe.invoices as any).retrieveUpcoming({
-      customer: user.subscription.stripeCustomerId,
-    });
+    // 2. Extract the price directly from the subscription object 
+    
+    const amountInCents = sub.items?.data?.[0]?.price?.unit_amount || 999;
+    const currency = sub.items?.data?.[0]?.price?.currency || 'usd';
 
     return NextResponse.json({
       status: sub.status,
       planName: 'Premium',
-      amount: upcomingInvoice.amount_due / 100,
-      currency: upcomingInvoice.currency,
+      amount: amountInCents / 100, // Convert cents to dollars
+      currency: currency,
       currentPeriodEnd: new Date(sub.current_period_end * 1000).toISOString(),
       cancelAtPeriodEnd: sub.cancel_at_period_end,
     });
