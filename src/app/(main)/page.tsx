@@ -1,20 +1,27 @@
 import Link from 'next/link';
 import { Product, Category } from '@/types';
 
+// Force Next.js to NEVER cache this page so it always shows fresh data
+export const dynamic = 'force-dynamic'; 
+
 async function getFeaturedProducts(): Promise<Product[]> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!baseUrl) return [];
-
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    
+    // Change to 'no-store' to bypass cache
     const res = await fetch(
-      `${baseUrl}/api/products?featured=true&limit=8`,
-      { next: { revalidate: 60 } }
+      `${baseUrl}/api/products?featured=true&limit=20`,
+      { cache: 'no-store' } 
     );
     if (!res.ok) return [];
     const data = await res.json();
     
-    // STRICT ARRAY CHECK: prevents the .map is not a function error
-    return Array.isArray(data?.products) ? data.products : [];
+    const products = Array.isArray(data?.products) ? data.products : [];
+    
+    // STRICT FRONTEND FILTER: Force it to only return items where isFeatured is true
+    // (This guarantees it works even if the API route ignores the query param)
+    return products.filter((p: any) => p.isFeatured === true).slice(0, 8);
+    
   } catch {
     return [];
   }
@@ -22,17 +29,15 @@ async function getFeaturedProducts(): Promise<Product[]> {
 
 async function getCategories(): Promise<Category[]> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!baseUrl) return [];
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
     const res = await fetch(
       `${baseUrl}/api/categories`,
-      { next: { revalidate: 60 } }
+      { cache: 'no-store' } // Bypass cache here too
     );
     if (!res.ok) return [];
     const data = await res.json();
     
-    // STRICT ARRAY CHECK: prevents the .map is not a function error
     return Array.isArray(data?.categories) ? data.categories : [];
   } catch {
     return [];
@@ -127,7 +132,7 @@ export default async function HomePage() {
             <div className="text-center py-16 text-gray-400">
               <p className="text-lg">No products yet.</p>
               <p className="text-sm mt-1">
-                Add some products through the admin panel.
+                Add some products through the admin panel and mark them as featured.
               </p>
             </div>
           ) : (
@@ -138,12 +143,16 @@ export default async function HomePage() {
                   href={`/products/${product._id}`}
                   className="group bg-white rounded-2xl overflow-hidden border border-gray-100 hover:shadow-md transition-shadow"
                 >
-                  <div className="aspect-square bg-gray-50 overflow-hidden">
+                  <div className="aspect-square bg-gray-50 overflow-hidden relative">
                     <img
                       src={product.images[0] ?? '/placeholder.png'}
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
+                    {/* Optional: Add a featured badge visually */}
+                    <div className="absolute top-2 left-2 bg-indigo-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
+                      Featured
+                    </div>
                   </div>
                   <div className="p-4">
                     <h3 className="font-medium text-gray-900 truncate">
