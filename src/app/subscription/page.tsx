@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
@@ -26,6 +26,22 @@ export default function SubscriptionPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [subDetails, setSubDetails] = useState<any>(null);
+
+// Fetch the native subscription details from Stripe without opening the portal
+  useEffect(() => {
+    if (isPremium && user) {
+  
+      const userId = (user as any)._id || (user as any).id; 
+      
+      fetch('/api/subscription/details', {
+        headers: { 'x-user-id': userId } 
+      })
+        .then(res => res.json())
+        .then(data => setSubDetails(data))
+        .catch(console.error);
+    }
+  }, [isPremium, user]);
 
   const handleSubscribe = async () => {
     if (!user) {
@@ -54,7 +70,7 @@ export default function SubscriptionPage() {
       const res = await fetch('/api/stripe/portal', { method: 'POST' });
       const data = await res.json();
       if (data.url) {
-        window.location.href = data.url; // Opens Stripe Customer Portal
+        window.location.href = data.url; 
       } else {
         alert(data.error || 'Failed to load portal');
       }
@@ -67,22 +83,49 @@ export default function SubscriptionPage() {
 
   if (authLoading) return null;
 
-  // ── PREMIUM USER VIEW (History & Management) ──
+  // ── PREMIUM USER VIEW (Native History & Management) ──
   if (isPremium) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center min-h-[60vh]">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Manage Your Premium Subscription</h1>
-        <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-8 mb-8 max-w-xl mx-auto">
-          <h2 className="text-xl font-semibold text-indigo-900 mb-2">Status: Active</h2>
-          <p className="text-indigo-700 text-sm mb-8 leading-relaxed">
-            Access your complete billing history, download past invoices, view renewal dates, update payment methods, or cancel your subscription below.
-          </p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Premium Plan</h1>
+        
+        <div className="bg-white border border-gray-200 rounded-2xl p-8 mb-8 max-w-xl mx-auto shadow-sm text-left">
+          <div className="flex justify-between items-center mb-6 pb-6 border-b border-gray-100">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Premium Membership</h2>
+              <p className="text-sm text-emerald-600 font-medium mt-1">● Active</p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold text-gray-900">
+                ${subDetails?.amount ? subDetails.amount.toFixed(2) : '9.99'}
+              </p>
+              <p className="text-xs text-gray-500">per month</p>
+            </div>
+          </div>
+
+          <div className="space-y-4 mb-8">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Renewal Date</span>
+              <span className="font-medium text-gray-900">
+                {subDetails?.currentPeriodEnd 
+                  ? new Date(subDetails.currentPeriodEnd).toLocaleDateString() 
+                  : 'Loading...'}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Auto-renew</span>
+              <span className="font-medium text-gray-900">
+                {subDetails?.cancelAtPeriodEnd ? 'Off (Canceling)' : 'On'}
+              </span>
+            </div>
+          </div>
+
           <button 
             onClick={handleManageSubscription}
             disabled={portalLoading}
-            className="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm"
+            className="w-full py-3 bg-gray-50 text-gray-700 font-semibold rounded-xl border border-gray-200 hover:bg-gray-100 disabled:opacity-50 transition-colors"
           >
-            {portalLoading ? 'Opening Secure Portal...' : 'View History & Manage Billing'}
+            {portalLoading ? 'Redirecting...' : 'Update Payment Method or Cancel'}
           </button>
         </div>
       </div>
