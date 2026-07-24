@@ -16,6 +16,19 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('token')?.value;
 
+// Block /api-docs in production for non-admins
+if (pathname === '/api-docs') {
+  if (process.env.NODE_ENV === 'production') {
+    if (!token) {
+      return NextResponse.redirect(new URL('/admin/login', request.url));
+    }
+    const payload = await getPayload(token);
+    if (payload?.role !== 'admin') {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+  }
+}
+
   // ── Admin routes ──────────────────────────────────────────────────────────
   if (pathname.startsWith('/admin')) {
     if (pathname === '/admin/login') {
@@ -75,6 +88,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/admin/:path*',
+    '/api-docs',
     '/orders/:path*',
     '/settings',
     '/login',

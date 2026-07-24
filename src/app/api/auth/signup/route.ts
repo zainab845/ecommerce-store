@@ -4,6 +4,51 @@ import jwt from 'jsonwebtoken';
 import connectToDatabase from '@/lib/db';
 import User from '@/lib/models/User';
 
+/**
+ * @swagger
+ * /api/auth/signup:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Create a new user account
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, email, password]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Zainab Bilal
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: zainab@example.com
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *                 example: securepass123
+ *     responses:
+ *       201:
+ *         description: Account created. JWT cookie is set.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Validation error or email already in use
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+
 export async function POST(request: NextRequest) {
   try {
     await connectToDatabase();

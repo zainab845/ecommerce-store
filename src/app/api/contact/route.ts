@@ -3,6 +3,47 @@ import dbConnect from '@/lib/db';
 import Contact from '@/lib/models/Contact';
 import { pushNotification } from '@/lib/firebase-admin';
 
+/**
+ * @swagger
+ * /api/contact:
+ *   post:
+ *     tags: [Contact]
+ *     summary: Submit a contact form message
+ *     description: Saves the message to the database and sends a real-time notification to the admin via Firebase.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, email, message]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Zainab Bilal
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: zainab@example.com
+ *               subject:
+ *                 type: string
+ *                 example: Question about my order
+ *               message:
+ *                 type: string
+ *                 example: Hi, I would like to know about...
+ *     responses:
+ *       201:
+ *         description: Message sent successfully
+ *       400:
+ *         description: Missing required fields
+ *   get:
+ *     tags: [Contact]
+ *     summary: Get all contact messages (public endpoint — secured at admin page level)
+ *     responses:
+ *       200:
+ *         description: List of contact messages
+ */
+
 export async function POST(request: NextRequest) {
   try {
     await dbConnect();

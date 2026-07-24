@@ -4,6 +4,63 @@ import { getAllProducts } from '@/lib/controllers/productController';
 // Natively cache the route for 60 seconds (Handles unique query params automatically!)
 export const revalidate = 60;
 
+/**
+ * @swagger
+ * /api/products:
+ *   get:
+ *     tags: [Products]
+ *     summary: Get all products with filtering, sorting, and pagination
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 12
+ *         description: Items per page
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search term matched against product name
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Category slug to filter by
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           enum: [price-asc, price-desc, name]
+ *         description: Sort order. Default is newest first.
+ *       - in: query
+ *         name: featured
+ *         schema:
+ *           type: string
+ *           enum: [true]
+ *         description: Pass `true` to return only featured products
+ *     responses:
+ *       200:
+ *         description: Paginated list of products
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 products:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Product'
+ *                 pagination:
+ *                   $ref: '#/components/schemas/Pagination'
+ */
+
 export async function GET(request: NextRequest) {
   const start = Date.now();
 

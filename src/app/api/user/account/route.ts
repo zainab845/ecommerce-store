@@ -8,6 +8,38 @@ import User from '@/lib/models/User';
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
+/**
+ * @swagger
+ * /api/user/account:
+ *   delete:
+ *     tags: [User]
+ *     summary: Permanently delete the user's account
+ *     description: |
+ *       Deletes the account, cancels any active Stripe subscription, and clears the auth cookie.
+ *       - Email accounts must provide their `password`
+ *       - Google-only accounts must provide `confirmation` with the exact text "delete my account"
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 description: For email accounts
+ *               confirmation:
+ *                 type: string
+ *                 description: For Google-only accounts — must be "delete my account"
+ *     responses:
+ *       200:
+ *         description: Account deleted
+ *       401:
+ *         description: Wrong password
+ */
+
 export async function DELETE(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;

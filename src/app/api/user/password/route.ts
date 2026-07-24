@@ -6,6 +6,36 @@ import User from '@/lib/models/User';
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
+/**
+ * @swagger
+ * /api/user/password:
+ *   patch:
+ *     tags: [User]
+ *     summary: Change the user's password
+ *     description: Requires the current password for email accounts. Google-only accounts can set a password without providing a current one.
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [newPassword]
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 description: Required for email-authenticated accounts
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 8
+ *     responses:
+ *       200:
+ *         description: Password updated
+ *       401:
+ *         description: Current password incorrect
+ */
+
 export async function PATCH(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;
