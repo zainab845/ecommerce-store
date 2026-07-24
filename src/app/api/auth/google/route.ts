@@ -1,5 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+/**
+ * @swagger
+ * /api/auth/google:
+ *   get:
+ *     tags: [Auth]
+ *     summary: Initiate Google OAuth login
+ *     description: Redirects the user to the Google consent screen for authentication.
+ *     parameters:
+ *       - in: query
+ *         name: from
+ *         schema:
+ *           type: string
+ *         description: Optional redirect path after successful login (e.g., /settings)
+ *     responses:
+ *       302:
+ *         description: Redirects to Google's OAuth consent screen
+ */
+
 export async function GET(request: NextRequest) {
   const from = request.nextUrl.searchParams.get('from') || '/';
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';

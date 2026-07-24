@@ -7,6 +7,46 @@ function toSlug(name: string): string {
   return name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 }
 
+/**
+ * @swagger
+ * /api/admin/products/{id}:
+ *   put:
+ *     tags: [Admin - Products]
+ *     summary: Update a product
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Product'
+ *     responses:
+ *       200:
+ *         description: Product updated
+ *       404:
+ *         description: Product not found
+ *   delete:
+ *     tags: [Admin - Products]
+ *     summary: Delete a product
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Product deleted
+ */
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

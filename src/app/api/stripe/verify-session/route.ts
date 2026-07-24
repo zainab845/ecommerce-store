@@ -5,6 +5,34 @@ import Order from '@/lib/models/Order';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
+/**
+ * @swagger
+ * /api/stripe/verify-session:
+ *   get:
+ *     tags: [Stripe]
+ *     summary: Verify a Stripe checkout session and return the linked order
+ *     description: Called by the `/checkout/success` page after Stripe redirects the user back. Retrieves the session from Stripe, finds the order by the session's metadata, and returns it.
+ *     parameters:
+ *       - in: query
+ *         name: session_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Stripe Checkout Session ID (format cs_test_...)
+ *     responses:
+ *       200:
+ *         description: Order linked to this session
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 order:
+ *                   $ref: '#/components/schemas/Order'
+ *       404:
+ *         description: Order not found for this session
+ */
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);

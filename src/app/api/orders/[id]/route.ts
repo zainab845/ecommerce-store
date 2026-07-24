@@ -5,6 +5,38 @@ import Order from '@/lib/models/Order';
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
+/**
+ * @swagger
+ * /api/orders/{id}:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Get a single order by ID
+ *     description: Returns the order only if it belongs to the authenticated user, or if the requester is an admin.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: MongoDB ObjectId of the order
+ *     responses:
+ *       200:
+ *         description: Order details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 order:
+ *                   $ref: '#/components/schemas/Order'
+ *       403:
+ *         description: Order belongs to a different user
+ *       404:
+ *         description: Order not found
+ */
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> } // <-- 1. Type as Promise

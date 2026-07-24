@@ -23,6 +23,65 @@ function safeStripeImageUrl(url: string | undefined): string | null {
   }
 }
 
+/**
+ * @swagger
+ * /api/stripe/checkout-session:
+ *   post:
+ *     tags: [Stripe]
+ *     summary: Create a Stripe Checkout Session for a product order
+ *     description: |
+ *       Creates an order in MongoDB with status `Pending`, then creates a Stripe hosted checkout session.
+ *       Premium users automatically get a 10% discount applied at the unit price level.
+ *       Redirects the user to `NEXT_PUBLIC_APP_URL/checkout/success` on payment success.
+ *       Product image URLs must be absolute `https://` URLs under 2048 characters — relative paths are silently omitted.
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [items, totalAmount, shippingAddress]
+ *             properties:
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     product:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     price:
+ *                       type: number
+ *                     quantity:
+ *                       type: integer
+ *                     image:
+ *                       type: string
+ *               totalAmount:
+ *                 type: number
+ *               shippingAddress:
+ *                 type: string
+ *                 description: Full readable address from reverse geocoding
+ *     responses:
+ *       200:
+ *         description: Stripe Checkout URL
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 url:
+ *                   type: string
+ *                 isPremium:
+ *                   type: boolean
+ *                 discountApplied:
+ *                   type: boolean
+ *       403:
+ *         description: Admin accounts cannot place orders
+ */
+
 export async function POST(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;

@@ -5,6 +5,65 @@ import Order from '@/lib/models/Order';
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
+/**
+ * @swagger
+ * /api/orders:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Get all orders for the logged-in user
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: User's order history
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 orders:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Order'
+ *       401:
+ *         description: Not authenticated
+ *   post:
+ *     tags: [Orders]
+ *     summary: Create a new order (internal — called by Stripe checkout session)
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [items, totalAmount, shippingAddress]
+ *             properties:
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     product:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     price:
+ *                       type: number
+ *                     quantity:
+ *                       type: integer
+ *               totalAmount:
+ *                 type: number
+ *               shippingAddress:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Order created
+ *       401:
+ *         description: Not authenticated
+ */
+
 // GET — return all orders for the logged-in user
 export async function GET(request: NextRequest) {
   try {

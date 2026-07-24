@@ -20,6 +20,33 @@ function safeStripeImageUrl(url: string | undefined): string | null {
   }
 }
 
+/**
+ * @swagger
+ * /api/checkout:
+ *   post:
+ *     tags: [Orders]
+ *     summary: Process standard checkout
+ *     description: Endpoint for handling non-Stripe checkout operations or cart validation.
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *     responses:
+ *       200:
+ *         description: Checkout processed successfully
+ *       401:
+ *         description: Unauthorized
+ */
+
 export async function POST(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;

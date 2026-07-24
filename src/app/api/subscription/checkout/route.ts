@@ -7,6 +7,32 @@ import User from '@/lib/models/User';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
+/**
+ * @swagger
+ * /api/subscription/checkout:
+ *   post:
+ *     tags: [Subscription]
+ *     summary: Start a Stripe subscription checkout session
+ *     description: Creates a Stripe Checkout Session in `subscription` mode. Redirects the user to Stripe's hosted subscription page. Admins are blocked.
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Stripe Checkout URL
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 url:
+ *                   type: string
+ *                   example: https://checkout.stripe.com/pay/cs_test_...
+ *       400:
+ *         description: User already has an active subscription
+ *       403:
+ *         description: Admin accounts cannot subscribe
+ */
+
 export async function POST(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;

@@ -6,6 +6,30 @@ import { pushUserNotification } from '@/lib/firebase-admin';
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
+/**
+ * @swagger
+ * /api/admin/orders/{id}/accept:
+ *   post:
+ *     tags: [Admin - Orders]
+ *     summary: Accept a paid order
+ *     description: Changes order status from `Paid` to `Accepted`. Sends a real-time Firebase notification to the customer.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Order accepted
+ *       400:
+ *         description: Order is not in Paid status
+ *       404:
+ *         description: Order not found
+ */
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
