@@ -4,6 +4,49 @@ import jwt from 'jsonwebtoken';
 import connectToDatabase from '@/lib/db';
 import User from '@/lib/models/User';
 
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Log in as a regular user
+ *     description: Authenticates a user with email and password. Sets an httpOnly JWT cookie on success. Admin accounts are blocked from this endpoint.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               password:
+ *                 type: string
+ *                 example: mypassword123
+ *     responses:
+ *       200:
+ *         description: Login successful. JWT cookie is set.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Login successful
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Invalid credentials or admin account used here
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+
 export async function POST(request: NextRequest) {
   try {
     await connectToDatabase();

@@ -4,6 +4,33 @@ import jwt from 'jsonwebtoken';
 import connectToDatabase from '@/lib/db';
 import User from '@/lib/models/User';
 
+/**
+ * @swagger
+ * /api/admin/auth/login:
+ *   post:
+ *     tags: [Admin - Auth]
+ *     summary: Admin login (separate from user login)
+ *     description: Only accounts with `role = admin` can authenticate here. Regular users receive a 403.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Admin logged in. JWT cookie set.
+ *       403:
+ *         description: Account is not an admin
+ */
+
 export async function POST(request: NextRequest) {
   try {
     await connectToDatabase();

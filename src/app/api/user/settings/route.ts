@@ -8,6 +8,43 @@ export const dynamic = 'force-dynamic'; // <-- Bypasses Vercel caching
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
+/**
+ * @swagger
+ * /api/user/settings:
+ *   get:
+ *     tags: [User]
+ *     summary: Get the current user's profile data
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile including authProvider and subscription
+ *   patch:
+ *     tags: [User]
+ *     summary: Update name and/or email
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: New Name
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: newemail@example.com
+ *     responses:
+ *       200:
+ *         description: Profile updated
+ *       400:
+ *         description: Email already in use or no fields provided
+ */
+
 // GET — return current user's editable profile data
 export async function GET(request: NextRequest) {
   try {

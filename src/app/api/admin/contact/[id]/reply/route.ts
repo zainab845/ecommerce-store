@@ -4,6 +4,42 @@ import { requireAdmin } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import Contact from '@/lib/models/Contact';
 
+/**
+ * @swagger
+ * /api/admin/contact/{id}/reply:
+ *   post:
+ *     tags: [Admin - Contact]
+ *     summary: Reply to a customer contact message via email
+ *     description: Sends a reply email to the customer using Nodemailer and marks the contact message as replied.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [replySubject, replyBody]
+ *             properties:
+ *               replySubject:
+ *                 type: string
+ *                 example: Re - Your inquiry
+ *               replyBody:
+ *                 type: string
+ *                 example: Hi, thank you for contacting us...
+ *     responses:
+ *       200:
+ *         description: Reply sent
+ *       404:
+ *         description: Contact message not found
+ */
+
 export async function POST(
   request: NextRequest, 
   { params }: { params: Promise<{ id: string }> }

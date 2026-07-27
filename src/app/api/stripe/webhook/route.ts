@@ -17,6 +17,35 @@ function getSafeDate(timestamp: any): Date | undefined {
   return isNaN(date.getTime()) ? undefined : date;
 }
 
+/**
+ * @swagger
+ * /api/stripe/webhook:
+ *   post:
+ *     tags: [Stripe]
+ *     summary: Stripe webhook endpoint
+ *     description: |
+ *       Receives signed webhook events from Stripe. **Do not call this directly** — it is only called by Stripe servers.
+ *
+ *       Handles:
+ *       - `checkout.session.completed` (mode=payment) → sets order status to `Paid`, pushes admin Firebase notification
+ *       - `checkout.session.completed` (mode=subscription) → activates user Premium subscription
+ *       - `customer.subscription.created` → backup activation
+ *       - `customer.subscription.updated` → syncs subscription status
+ *       - `customer.subscription.deleted` → marks subscription as cancelled
+ *     parameters:
+ *       - in: header
+ *         name: stripe-signature
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Stripe webhook signature for verification
+ *     responses:
+ *       200:
+ *         description: Event received and processed
+ *       400:
+ *         description: Invalid signature or missing header
+ */
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();

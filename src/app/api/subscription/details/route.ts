@@ -5,6 +5,52 @@ import User from '@/lib/models/User';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
+/**
+ * @swagger
+ * /api/subscription/details:
+ *   get:
+ *     summary: Retrieves active subscription details
+ *     description: Fetches the current Stripe subscription status, renewal date, and upcoming invoice amount for the logged-in user.
+ *     tags:
+ *       - Subscription
+ *     parameters:
+ *       - in: header
+ *         name: x-user-id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The internal MongoDB ID of the user
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved subscription details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "active"
+ *                 planName:
+ *                   type: string
+ *                   example: "Premium"
+ *                 amount:
+ *                   type: number
+ *                   example: 9.99
+ *                 currency:
+ *                   type: string
+ *                   example: "usd"
+ *                 currentPeriodEnd:
+ *                   type: string
+ *                   format: date-time
+ *                 cancelAtPeriodEnd:
+ *                   type: boolean
+ *       401:
+ *         description: Unauthorized (Missing x-user-id)
+ *       500:
+ *         description: Internal Server Error
+ */
+
 export async function GET(request: NextRequest) {
   try {
     await dbConnect();

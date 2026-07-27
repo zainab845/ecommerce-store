@@ -5,6 +5,29 @@ import jwt from 'jsonwebtoken';
 import dbConnect from '@/lib/db';
 import User from '@/lib/models/User';
 
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     tags: [Auth]
+ *     summary: Get the currently authenticated user
+ *     description: Returns the logged-in user's profile including live subscription status fetched from the database.
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Currently authenticated user
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Not authenticated
+ */
+
 export async function GET() {
   try {
     const cookieStore = await cookies();

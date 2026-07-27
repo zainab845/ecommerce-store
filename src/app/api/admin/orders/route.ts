@@ -5,6 +5,37 @@ import Order from '@/lib/models/Order';
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
+/**
+ * @swagger
+ * /api/admin/orders:
+ *   get:
+ *     tags: [Admin - Orders]
+ *     summary: Get all orders with status filter and pagination
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [Pending, Paid, Accepted, Refunded, Cancelled]
+ *     responses:
+ *       200:
+ *         description: Paginated orders
+ *       403:
+ *         description: Not an admin
+ */
+
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;

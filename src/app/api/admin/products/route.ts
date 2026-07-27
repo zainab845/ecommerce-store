@@ -8,6 +8,90 @@ function toSlug(name: string): string {
   return name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 }
 
+/**
+ * @swagger
+ * /api/admin/products:
+ *   get:
+ *     tags: [Admin - Products]
+ *     summary: Get all products with admin filters and pagination
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Category ObjectId
+ *       - in: query
+ *         name: stock
+ *         schema:
+ *           type: string
+ *           enum: [instock, outofstock]
+ *       - in: query
+ *         name: featured
+ *         schema:
+ *           type: string
+ *           enum: [true, false]
+ *     responses:
+ *       200:
+ *         description: Paginated products list
+ *       401:
+ *         description: Not authenticated as admin
+ *   post:
+ *     tags: [Admin - Products]
+ *     summary: Create a new product
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, description, price, category]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               originalPrice:
+ *                 type: number
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               category:
+ *                 type: string
+ *                 description: Category ObjectId
+ *               stock:
+ *                 type: integer
+ *               isFeatured:
+ *                 type: boolean
+ *               isPremiumOnly:
+ *                 type: boolean
+ *     responses:
+ *       201:
+ *         description: Product created
+ *       400:
+ *         description: Validation error or duplicate name
+ */
+
 export async function GET(request: NextRequest) {
   try {
     const admin = await requireAdmin();

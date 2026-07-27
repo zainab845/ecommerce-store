@@ -3,6 +3,42 @@ import { requireAdmin } from '@/lib/auth';
 import { createCategory } from '@/lib/controllers/adminController';
 import { getAllCategories } from '@/lib/controllers/productController';
 
+/**
+ * @swagger
+ * /api/admin/categories:
+ *   get:
+ *     tags: [Admin - Categories]
+ *     summary: Get all categories
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: All categories
+ *   post:
+ *     tags: [Admin - Categories]
+ *     summary: Create a new category
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Electronics
+ *               description:
+ *                 type: string
+ *               image:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Category created
+ */
+
 export async function GET() {
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

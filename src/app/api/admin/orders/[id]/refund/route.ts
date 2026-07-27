@@ -8,6 +8,40 @@ import { pushUserNotification } from '@/lib/firebase-admin';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
+/**
+ * @swagger
+ * /api/admin/orders/{id}/refund:
+ *   post:
+ *     tags: [Admin - Orders]
+ *     summary: Issue a full refund for an order
+ *     description: Calls the Stripe Refunds API, sets order status to `Refunded`, saves the reason, and sends a real-time Firebase notification to the customer.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [reason]
+ *             properties:
+ *               reason:
+ *                 type: string
+ *                 example: Item is out of stock
+ *     responses:
+ *       200:
+ *         description: Refund issued
+ *       400:
+ *         description: No Stripe payment found, or order not in refundable state
+ */
+
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

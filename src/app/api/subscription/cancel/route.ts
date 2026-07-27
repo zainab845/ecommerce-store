@@ -7,6 +7,22 @@ import User from '@/lib/models/User';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
+/**
+ * @swagger
+ * /api/subscription/cancel:
+ *   post:
+ *     tags: [Subscription]
+ *     summary: Cancel the user's Premium subscription
+ *     description: Sets `cancel_at_period_end = true` on Stripe. The user keeps Premium access until the end of their current billing period.
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Cancellation scheduled
+ *       400:
+ *         description: No active subscription found
+ */
+
 export async function POST(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;
