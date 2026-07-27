@@ -1,3 +1,4 @@
+import ChatWidget from '@/components/chat/ChatWidget';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 
@@ -9,8 +10,10 @@ export default function MainLayout({
   return (
     <>
       <Navbar />
-      <main className="min-h-screen">{children}</main>
+      <main>{children}</main>
       <Footer />
+      {/* Chat widget renders its own portal-like fixed positioning */}
+      <ChatWidget />
     </>
   );
 }
