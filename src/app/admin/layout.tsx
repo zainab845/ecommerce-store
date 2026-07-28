@@ -20,6 +20,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin/orders', label: 'Orders', icon: '📦' },
     { href: '/admin/contact', label: 'Contact Messages', icon: '✉️' },
     { href: '/admin/subscribers', label: 'Subscribers', icon: '⭐' },
+    { href: '/admin/chat', label: 'Chat', icon: '💬' },
   ];
 
   return (
