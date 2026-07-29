@@ -197,21 +197,24 @@ export function useAdminChat(): UseAdminChatReturn {
     };
   }, [connect]);
 
-  const openConversation = useCallback((conv: Conversation) => {
-    setActiveConversation(conv);
-    activeConvRef.current = conv;
-    setMessages([]);
-    setUserTyping(false);
+ const openConversation = useCallback((conv: Conversation) => {
+  setActiveConversation(conv);
+  activeConvRef.current = conv;
+  setMessages([]);
+  setUserTyping(false);
 
-    // Clear unread for this conversation in sidebar
-    setConversations(prev =>
-      prev.map(c => c._id === conv._id ? { ...c, unreadByAdmin: 0 } : c)
-    );
+  setConversations(prev =>
+    prev.map(c => c._id === conv._id ? { ...c, unreadByAdmin: 0 } : c)
+  );
 
-    socketRef.current?.emit('admin_open_conversation', {
-      conversationId: conv._id,
-    });
-  }, []);
+  // Tell server we're leaving previous conversation (stops auto-read for old one)
+  socketRef.current?.emit('admin_close_active');
+
+  // Tell server which conversation admin is now viewing
+  socketRef.current?.emit('admin_open_conversation', {
+    conversationId: conv._id,
+  });
+}, []);
 
   const sendMessage = useCallback((content: string) => {
     if (!socketRef.current?.connected || !activeConvRef.current || !content.trim()) return;
