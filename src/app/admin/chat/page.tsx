@@ -124,6 +124,7 @@ export default function AdminChatPage() {
     sendTypingStart,
     sendTypingStop,
     closeConversation,
+    reopenConversation,
     totalUnread,
   } = useAdminChat();
 
@@ -289,23 +290,30 @@ export default function AdminChatPage() {
 
               <div className="flex items-center gap-2">
                 {activeConversation.status === 'open' ? (
-                  <span className="flex items-center gap-1.5 text-xs text-green-600 font-medium bg-green-50 px-2.5 py-1 rounded-full">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                    Open
-                  </span>
+                  <>
+                    <span className="flex items-center gap-1.5 text-xs text-green-600 font-medium bg-green-50 px-2.5 py-1 rounded-full">
+                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                      Open
+                    </span>
+                    <button
+                      onClick={handleClose}
+                      className="text-xs text-gray-500 hover:text-red-600 border border-gray-200 hover:border-red-200 px-3 py-1.5 rounded-lg transition-colors font-medium"
+                    >
+                      Close
+                    </button>
+                  </>
                 ) : (
-                  <span className="text-xs text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full font-medium">
-                    Closed
-                  </span>
-                )}
-
-                {activeConversation.status === 'open' && (
-                  <button
-                    onClick={handleClose}
-                    className="text-xs text-gray-500 hover:text-red-600 border border-gray-200 hover:border-red-200 px-3 py-1.5 rounded-lg transition-colors font-medium"
-                  >
-                    Close
-                  </button>
+                  <>
+                    <span className="text-xs text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full font-medium">
+                      Closed
+                    </span>
+                    <button
+                      onClick={() => reopenConversation(activeConversation._id)}
+                      className="text-xs text-indigo-600 hover:text-indigo-800 border border-indigo-200 hover:border-indigo-400 bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors font-medium"
+                    >
+                      Reopen
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -407,8 +415,14 @@ export default function AdminChatPage() {
             {/* Input */}
             <div className="px-4 py-3 bg-white border-t border-gray-100">
               {activeConversation.status === 'closed' ? (
-                <div className="text-center py-3">
-                  <p className="text-sm text-gray-400">This conversation is closed.</p>
+                <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-xl">
+                  <p className="text-sm text-gray-500">This conversation is closed.</p>
+                  <button
+                    onClick={() => reopenConversation(activeConversation._id)}
+                    className="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                  >
+                    Reopen Conversation
+                  </button>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
