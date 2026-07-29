@@ -2,16 +2,32 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [chatUnread, setChatUnread] = useState(0);
 
   // Skip the sidebar layout entirely for the admin login page
   if (pathname === '/admin/login') {
     return <>{children}</>;
   }
+
+  // Poll for chat unread count every 30 seconds
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch('/api/admin/chat/unread');
+        const data = await res.json();
+        setChatUnread(data.count ?? 0);
+      } catch {}
+    };
+
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const navLinks = [
     { href: '/admin', label: 'Dashboard', icon: '□' },
@@ -19,8 +35,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin/categories', label: 'Categories', icon: '📁' },
     { href: '/admin/orders', label: 'Orders', icon: '📦' },
     { href: '/admin/contact', label: 'Contact Messages', icon: '✉️' },
-    { href: '/admin/subscribers', label: 'Subscribers', icon: '⭐' },
-    { href: '/admin/chat', label: 'Chat', icon: '💬' },
+    { href: '/admin/subscribers', label: 'Subscribers', icon: '⭐' }, // Kept your existing link!
+    { href: '/admin/chat', label: 'Chat', icon: '💬', badge: chatUnread }, // Added badge property
   ];
 
   return (
@@ -51,15 +67,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all ${
+                // Updated classes here to flex justify-between so the badge goes to the right
+                className={`flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-medium transition-all ${
                   pathname === link.href
                     ? 'bg-indigo-600 text-white shadow-md'
                     : 'hover:bg-gray-800 text-gray-400 hover:text-white'
                 }`}
                 onClick={() => setSidebarOpen(false)}
               >
-                <span className="text-lg">{link.icon}</span>
-                {link.label}
+                {/* Grouped the icon and label together on the left */}
+                <span className="flex items-center gap-3">
+                  <span className="text-lg">{link.icon}</span>
+                  {link.label}
+                </span>
+
+                {/* Unread badge for chat */}
+                {link.badge !== undefined && link.badge > 0 && (
+                  <span className="w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {link.badge > 9 ? '9+' : link.badge}
+                  </span>
+                )}
               </Link>
             ))}
           </nav>
