@@ -47,11 +47,16 @@ export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // NEW: Timer ref for the 60-second auto-reply
+  const noReplyTimerRef = useRef<NodeJS.Timeout | null>(null); 
 
   const {
     messages,
+    setMessages, // Ensure this is exported from your useChat hook!
     connected,
     adminTyping,
     sendMessage,
@@ -82,6 +87,16 @@ export default function ChatWidget() {
     }
   }, [open]);
 
+  // NEW: Clear the no-reply timer if admin or AI responded
+  useEffect(() => {
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg && (lastMsg.senderRole === 'admin' || lastMsg.senderRole === 'ai')) {
+      if (noReplyTimerRef.current) {
+        clearTimeout(noReplyTimerRef.current);
+      }
+    }
+  }, [messages]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setInput(val);
@@ -103,6 +118,35 @@ export default function ChatWidget() {
     setInput('');
     setIsTyping(false);
     inputRef.current?.focus();
+
+    // NEW: Clear any existing timer
+    if (noReplyTimerRef.current) clearTimeout(noReplyTimerRef.current);
+
+    // NEW: Set a 60-second timer — if no admin reply, show a note
+    noReplyTimerRef.current = setTimeout(() => {
+      if (setMessages) {
+        setMessages(prev => {
+          // Only add the note if the last message is still from the user
+          const last = prev[prev.length - 1];
+          if (last?.senderRole === 'user') {
+            return [
+              ...prev,
+              {
+                _id: `autoreply-${Date.now()}`,
+                conversationId: '',
+                senderId: 'system',
+                senderName: 'System',
+                senderRole: 'ai' as const,
+                content: "Our support team has been notified. We'll get back to you as soon as possible — usually within a few minutes.",
+                read: true,
+                createdAt: new Date().toISOString(),
+              },
+            ];
+          }
+          return prev;
+        });
+      }
+    }, 60000);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -141,7 +185,7 @@ export default function ChatWidget() {
               <div>
                 <p className="text-sm font-semibold text-white">E-Shop Support</p>
                 <p className="text-xs text-indigo-200">
-                  {connected ? 'Online' : 'Connecting...'}
+                  {connected ? 'Online · We reply quickly' : 'Reconnecting...'}
                 </p>
               </div>
             </div>
@@ -155,6 +199,19 @@ export default function ChatWidget() {
               </svg>
             </button>
           </div>
+
+          {/* Reconnecting banner */}
+          {!connected && (
+            <div className="bg-amber-50 border-b border-amber-100 px-4 py-2 flex items-center gap-2">
+              <svg className="animate-spin w-3 h-3 text-amber-500 flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <p className="text-xs text-amber-700">
+                Reconnecting to chat... Your messages are safe.
+              </p>
+            </div>
+          )}
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1 bg-gray-50 min-h-0 max-h-[420px]">
@@ -193,7 +250,8 @@ export default function ChatWidget() {
                       return (
                         <div
                           key={msg._id}
-                          className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} mb-1`}
+                          // NEW: Added the 'group' class to the outer div here for hover timestamps
+                          className={`flex flex-col group ${isUser ? 'items-end' : 'items-start'} mb-1`}
                         >
                           {/* Sender name for admin/AI messages */}
                           {!isUser && showName && (
@@ -216,8 +274,8 @@ export default function ChatWidget() {
                             </div>
                           </div>
 
-                          {/* Timestamp */}
-                          <span className={`text-[10px] text-gray-400 mt-0.5 ${isUser ? 'mr-1' : 'ml-1'}`}>
+                          {/* NEW: Timestamp — updated to be visible on hover */}
+                          <span className={`text-[10px] text-gray-400 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${isUser ? 'mr-1 text-right' : 'ml-1'}`}>
                             {formatTime(msg.createdAt)}
                             {isUser && (
                               <span className="ml-1">
