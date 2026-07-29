@@ -318,6 +318,19 @@ export default function AdminChatPage() {
               </div>
             </div>
 
+            {/* AI responded — prompt admin to take over */}
+{messages.length > 0 &&
+  messages[messages.length - 1]?.senderRole === 'ai' && (
+  <div className="mx-5 mb-2 px-3 py-2 bg-amber-50 border border-amber-100 rounded-xl flex items-center justify-between gap-3">
+    <div className="flex items-center gap-2">
+      <span className="text-sm">🤖</span>
+      <p className="text-xs text-amber-700 font-medium">
+        AI assistant responded. Reply to take over the conversation.
+      </p>
+    </div>
+  </div>
+)}
+
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-5 py-4 bg-gray-50 space-y-1">
               {messages.length === 0 ? (
