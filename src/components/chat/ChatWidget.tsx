@@ -261,18 +261,28 @@ export default function ChatWidget() {
                           )}
 
                           <div className={`flex items-end gap-1.5 max-w-[80%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-                            <div
-                              className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                                isUser
-                                  ? 'bg-indigo-600 text-white rounded-br-sm'
-                                  : isAi
-                                  ? 'bg-purple-100 text-purple-900 rounded-bl-sm border border-purple-200'
-                                  : 'bg-white text-gray-900 rounded-bl-sm border border-gray-100 shadow-sm'
-                              }`}
-                            >
-                              {msg.content}
-                            </div>
-                          </div>
+  <div
+    className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
+      isUser
+        ? 'bg-indigo-600 text-white rounded-br-sm'
+        : isAi
+        ? 'bg-purple-50 text-purple-900 rounded-bl-sm border border-purple-200'
+        : 'bg-white text-gray-900 rounded-bl-sm border border-gray-100 shadow-sm'
+    }`}
+  >
+    {msg.content}
+    
+    {/* AI badge at the bottom of AI messages */}
+    {isAi && msg.senderId === 'ai-assistant' && (
+      <div className="mt-1.5 pt-1.5 border-t border-purple-200 flex items-center gap-1">
+        <svg className="w-3 h-3 text-purple-400" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+        </svg>
+        <span className="text-[10px] text-purple-400 font-medium">Automated reply · Agent notified</span>
+      </div>
+    )}
+  </div>
+</div>
 
                           {/* NEW: Timestamp — updated to be visible on hover */}
                           <span className={`text-[10px] text-gray-400 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${isUser ? 'mr-1 text-right' : 'ml-1'}`}>
