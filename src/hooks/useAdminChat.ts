@@ -39,6 +39,7 @@ interface UseAdminChatReturn {
   sendTypingStart: () => void;
   sendTypingStop: () => void;
   closeConversation: (conversationId: string) => void;
+  reopenConversation: (conversationId: string) => void;
   totalUnread: number;
 }
 
@@ -183,6 +184,18 @@ export function useAdminChat(): UseAdminChatReturn {
         }
       });
 
+      // Conversation reopened
+      socket.on('conversation_reopened', ({ conversationId }: { conversationId: string }) => {
+        setConversations(prev =>
+          prev.map(c =>
+            c._id === conversationId ? { ...c, status: 'open' } : c
+          )
+        );
+        if (activeConvRef.current?._id === conversationId) {
+          setActiveConversation(prev => prev ? { ...prev, status: 'open' } : null);
+        }
+      });
+
       socketRef.current = socket;
     } catch (err) {
       console.error('Failed to connect admin chat:', err);
@@ -197,24 +210,24 @@ export function useAdminChat(): UseAdminChatReturn {
     };
   }, [connect]);
 
- const openConversation = useCallback((conv: Conversation) => {
-  setActiveConversation(conv);
-  activeConvRef.current = conv;
-  setMessages([]);
-  setUserTyping(false);
+  const openConversation = useCallback((conv: Conversation) => {
+    setActiveConversation(conv);
+    activeConvRef.current = conv;
+    setMessages([]);
+    setUserTyping(false);
 
-  setConversations(prev =>
-    prev.map(c => c._id === conv._id ? { ...c, unreadByAdmin: 0 } : c)
-  );
+    setConversations(prev =>
+      prev.map(c => c._id === conv._id ? { ...c, unreadByAdmin: 0 } : c)
+    );
 
-  // Tell server we're leaving previous conversation (stops auto-read for old one)
-  socketRef.current?.emit('admin_close_active');
+    // Tell server we're leaving previous conversation (stops auto-read for old one)
+    socketRef.current?.emit('admin_close_active');
 
-  // Tell server which conversation admin is now viewing
-  socketRef.current?.emit('admin_open_conversation', {
-    conversationId: conv._id,
-  });
-}, []);
+    // Tell server which conversation admin is now viewing
+    socketRef.current?.emit('admin_open_conversation', {
+      conversationId: conv._id,
+    });
+  }, []);
 
   const sendMessage = useCallback((content: string) => {
     if (!socketRef.current?.connected || !activeConvRef.current || !content.trim()) return;
@@ -254,6 +267,10 @@ export function useAdminChat(): UseAdminChatReturn {
     socketRef.current?.emit('close_conversation', { conversationId });
   }, []);
 
+  const reopenConversation = useCallback((conversationId: string) => {
+    socketRef.current?.emit('reopen_conversation', { conversationId });
+  }, []);
+
   const totalUnread = conversations.reduce((sum, c) => sum + c.unreadByAdmin, 0);
 
   return {
@@ -267,6 +284,7 @@ export function useAdminChat(): UseAdminChatReturn {
     sendTypingStart,
     sendTypingStop,
     closeConversation,
+    reopenConversation,
     totalUnread,
   };
 }
