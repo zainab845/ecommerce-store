@@ -1,5 +1,5 @@
 'use client';
-
+import { Dispatch, SetStateAction } from 'react';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 
@@ -16,6 +16,7 @@ export interface ChatMessage {
 
 interface UseChatReturn {
   messages: ChatMessage[];
+  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   conversationId: string | null;
   connected: boolean;
   adminTyping: boolean;
@@ -171,6 +172,7 @@ export function useChat(): UseChatReturn {
 
   return {
     messages,
+    setMessages,
     conversationId,
     connected,
     adminTyping,
