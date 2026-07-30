@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
@@ -24,13 +24,27 @@ function isActive(pathname: string | null, href: string): boolean {
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+
+  const [scrolled, setScrolled] = useState(false); 
+
+  
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const pathname = usePathname();
   const { uniqueItems: cartCount } = useCart();
   const { totalItems: wishlistCount } = useWishlist();
   const { user, loading, isPremium, logout } = useAuth();
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
+    <header className={`sticky top-0 z-50 border-b transition-all duration-300 ${
+      scrolled
+        ? 'bg-white border-gray-100 shadow-sm'
+        : 'bg-white border-gray-100 shadow-sm'
+    }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
 
