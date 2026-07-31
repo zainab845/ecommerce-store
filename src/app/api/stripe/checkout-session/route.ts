@@ -4,6 +4,7 @@ import { jwtVerify } from 'jose';
 import dbConnect from '@/lib/db';
 import Order from '@/lib/models/Order';
 import User from '@/lib/models/User';
+import { checkStock } from '@/lib/inventory';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
@@ -112,6 +113,16 @@ export async function POST(request: NextRequest) {
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
     }
+
+    // ── Stock check before creating the order ─────────────────────────
+    const stockError = await checkStock(
+      items.map((item: any) => ({ product: item.product, quantity: item.quantity }))
+    );
+
+    if (stockError) {
+      return NextResponse.json({ error: stockError }, { status: 400 });
+    }
+    // ─────────────────────────────────────────────────────────────────
 
     await dbConnect();
 
