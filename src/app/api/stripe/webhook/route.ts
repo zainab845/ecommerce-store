@@ -4,6 +4,7 @@ import dbConnect from '@/lib/db';
 import Order from '@/lib/models/Order';
 import User from '@/lib/models/User';
 import { pushNotification } from '@/lib/firebase-admin';
+import { reduceStock } from '@/lib/inventory'; // Added import
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -82,6 +83,18 @@ export async function POST(request: NextRequest) {
             },
             { new: true }
           );
+
+          // ── Reduce stock after confirmed payment ──────────────────────
+          if (order?.items && order.items.length > 0) {
+            await reduceStock(
+              order.items.map((item: any) => ({
+                product: item.product.toString(),
+                quantity: item.quantity,
+              }))
+            );
+            console.log(`[Inventory] Stock reduced for order ${orderId}`);
+          }
+          // ─────────────────────────────────────────────────────────────
 
           const amount = order?.totalAmount
             ? `$${order.totalAmount.toFixed(2)}`
