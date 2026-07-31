@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllProducts } from '@/lib/controllers/productController';
+export const dynamic = 'force-dynamic';
 
 // Natively cache the route for 60 seconds (Handles unique query params automatically!)
 export const revalidate = 60;

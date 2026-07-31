@@ -3,6 +3,7 @@ import dbConnect from '@/lib/db';
 import Product from '@/lib/models/Product';
 import Category from '@/lib/models/Category';
 import { requireAdmin } from '@/lib/auth';
+export const dynamic = 'force-dynamic';
 
 function toSlug(name: string): string {
   return name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');

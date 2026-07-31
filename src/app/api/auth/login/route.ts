@@ -76,6 +76,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (user.isActive === false) {
+  return NextResponse.json(
+    { error: 'Your account has been disabled. Please contact support.' },
+    { status: 403 }
+  );
+}
+
     // Prevent admin login from user login API
     if (user.role === 'admin') {
       return NextResponse.json(

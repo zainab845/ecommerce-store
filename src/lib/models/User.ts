@@ -5,6 +5,7 @@ export interface IUser extends Document {
   email: string;
   password?: string;       // Optional — Google users have no password
   role: 'user' | 'admin';
+  isActive: boolean;
   googleId?: string;       // Google OAuth subject ID
   authProvider: 'email' | 'google' | 'both';
   subscription: {
@@ -29,6 +30,7 @@ const UserSchema = new Schema<IUser>(
     },
     password: { type: String }, // Not required — Google users have none
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    isActive: { type: Boolean, default: true }, 
     googleId: { type: String, sparse: true }, // sparse = unique but allows null
     authProvider: {
       type: String,
