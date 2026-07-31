@@ -4,6 +4,7 @@ import { jwtVerify } from 'jose';
 import dbConnect from '@/lib/db';
 import Order from '@/lib/models/Order';
 import { pushUserNotification } from '@/lib/firebase-admin';
+import { restoreStock } from '@/lib/inventory'; // Added import
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
@@ -40,7 +41,6 @@ const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
  *       400:
  *         description: No Stripe payment found, or order not in refundable state
  */
-
 
 export async function POST(
   request: NextRequest,
@@ -92,6 +92,16 @@ export async function POST(
       payment_intent: order.stripePaymentIntentId,
       reason: 'requested_by_customer',
     });
+
+    // ── Restore stock on refund ──────────────────────────────────
+    await restoreStock(
+      order.items.map((item: any) => ({
+        product: item.product.toString(),
+        quantity: item.quantity,
+      }))
+    );
+    console.log(`[Inventory] Stock restored for refunded order ${id}`);
+    // ────────────────────────────────────────────────────────────
 
     order.status = 'Refunded';
     order.refundReason = reason.trim();
