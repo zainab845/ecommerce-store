@@ -52,6 +52,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
+    if (user.isActive === false) {
+  return NextResponse.json(
+    { error: 'Your account has been disabled. Please contact support.' },
+    { status: 403 }
+  );
+}
+
     const token = jwt.sign(
       { id: user._id, name: user.name, email: user.email, role: user.role },
       process.env.JWT_SECRET!,
