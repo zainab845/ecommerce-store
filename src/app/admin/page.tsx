@@ -4,6 +4,8 @@ import Order from '@/lib/models/Order';
 import mongoose from 'mongoose';
 import NotificationBell from './NotificationBell';
 import RevenueChart from '@/components/admin/RevenueChart';
+import LowStockPanel from '@/components/admin/LowStockPanel'; // <-- Added import
+
 export const dynamic = 'force-dynamic';
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
@@ -226,6 +228,10 @@ export default async function AdminDashboard() {
           ))}
         </div>
       </div>
+
+      {/* Low Stock Alert */}
+      <LowStockPanel />
+
     </div>
   );
 }

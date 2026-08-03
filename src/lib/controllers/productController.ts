@@ -48,7 +48,7 @@ export async function getAllProducts(searchParams: {
       .skip(skip)
       .limit(limit)
       // Only fetch fields needed for the listing — skips description, reviewCount etc.
-      .select('name price originalPrice images category stock isFeatured')
+     .select('name price originalPrice images category stock isFeatured isPremiumOnly')
       .lean(), // ← KEY OPTIMIZATION: plain objects instead of Mongoose documents
     Product.countDocuments(query),
   ]);

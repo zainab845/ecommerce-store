@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProductById } from '@/lib/controllers/productController';
+import dbConnect from '@/lib/db';
+import Product from '@/lib/models/Product';
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> } // 1. Wrap params in a Promise
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const resolvedParams = await params; // 2. Await the params Promise
-    const product = await getProductById(resolvedParams.id); // 3. Use the resolved ID
+    await dbConnect();
+    const { id } = await params;
+
+    const product = await Product.findById(id)
+      .populate('category', 'name slug')
+      .lean();
 
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
@@ -15,9 +20,6 @@ export async function GET(
 
     return NextResponse.json({ product });
   } catch {
-    return NextResponse.json(
-      { error: 'Failed to fetch product' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch product' }, { status: 500 });
   }
 }
