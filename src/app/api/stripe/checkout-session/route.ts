@@ -4,6 +4,7 @@ import { jwtVerify } from 'jose';
 import dbConnect from '@/lib/db';
 import Order from '@/lib/models/Order';
 import User from '@/lib/models/User';
+import Coupon from '@/lib/models/Coupon'; // <-- Added import
 import { checkStock } from '@/lib/inventory';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -65,6 +66,9 @@ function safeStripeImageUrl(url: string | undefined): string | null {
  *               shippingAddress:
  *                 type: string
  *                 description: Full readable address from reverse geocoding
+ *               couponCode:
+ *                 type: string
+ *                 nullable: true
  *     responses:
  *       200:
  *         description: Stripe Checkout URL
@@ -101,14 +105,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let body: { items: any[]; totalAmount: number; shippingAddress: string };
+    // <-- Updated body type to include couponCode
+    let body: { items: any[]; totalAmount: number; shippingAddress: string; couponCode?: string | null };
     try {
       body = await request.json();
     } catch {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
     }
 
-    const { items, totalAmount, shippingAddress } = body;
+    // <-- Destructured couponCode
+    const { items, totalAmount, shippingAddress, couponCode } = body;
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
@@ -145,6 +151,15 @@ export async function POST(request: NextRequest) {
         phone: 'To be provided',
       },
     });
+
+    // ── Increment Coupon Usage ───────────────────────────────────────
+    if (couponCode) {
+      await Coupon.findOneAndUpdate(
+        { code: couponCode.toUpperCase(), isActive: true },
+        { $inc: { usedCount: 1 } }
+      );
+    }
+    // ─────────────────────────────────────────────────────────────────
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 

@@ -91,6 +91,16 @@ export default function AdminLoginPage() {
               />
             </div>
 
+            {/* Add after the password input div */}
+<div className="flex justify-end">
+  <Link
+    href="/forgot-password"
+    className="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+  >
+    Forgot password?
+  </Link>
+</div>
+
             {error && (
               <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl">
                 <p className="text-sm text-red-400 font-medium">{error}</p>
