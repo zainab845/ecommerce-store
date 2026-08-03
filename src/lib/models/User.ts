@@ -16,6 +16,8 @@ export interface IUser extends Document {
   };
   createdAt: Date;
   updatedAt: Date;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -37,6 +39,8 @@ const UserSchema = new Schema<IUser>(
       enum: ['email', 'google', 'both'],
       default: 'email',
     },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
     subscription: {
       status: {
         type: String,
