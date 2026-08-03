@@ -4,7 +4,7 @@ import Order from '@/lib/models/Order';
 import mongoose from 'mongoose';
 import NotificationBell from './NotificationBell';
 import RevenueChart from '@/components/admin/RevenueChart';
-import LowStockPanel from '@/components/admin/LowStockPanel'; // <-- Added import
+import LowStockPanel from '@/components/admin/LowStockPanel'; 
 
 export const dynamic = 'force-dynamic';
 
