@@ -128,11 +128,23 @@ function LoginForm() {
                 placeholder="Enter your password" value={form.password}
                 onChange={handleChange} className={inputClass} />
             </div>
+
+         
+<div className="flex justify-end">
+  <Link
+    href="/forgot-password"
+    className="text-xs text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
+  >
+    Forgot password?
+  </Link>
+</div>
+
             {error && (
               <div className="px-4 py-3 bg-red-50 border border-red-100 rounded-xl">
                 <p className="text-sm text-red-700 font-medium">{error}</p>
               </div>
             )}
+            
             <button type="submit" disabled={loading}
               className="w-full py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-60 text-sm">
               {loading ? 'Signing in…' : 'Sign in'}
