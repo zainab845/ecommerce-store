@@ -46,6 +46,16 @@ export const revalidate = 60;
  *           type: string
  *           enum: [true]
  *         description: Pass `true` to return only featured products
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *         description: Minimum price filter
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *         description: Maximum price filter
  *     responses:
  *       200:
  *         description: Paginated list of products
@@ -73,6 +83,8 @@ export async function GET(request: NextRequest) {
       search: searchParams.get('search') ?? undefined,
       sort: searchParams.get('sort') ?? undefined,
       featured: searchParams.get('featured') ?? undefined, // Added this so the homepage filter works!
+      minPrice: searchParams.get('minPrice') ?? undefined, // <-- Added Price Range
+      maxPrice: searchParams.get('maxPrice') ?? undefined, // <-- Added Price Range
       limit: parseInt(searchParams.get('limit') ?? '12'),
       page: parseInt(searchParams.get('page') ?? '1'),
     };

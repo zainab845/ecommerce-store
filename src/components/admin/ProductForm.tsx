@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Category, Product } from '@/types';
+import ImageUpload from '@/components/admin/ImageUpload';
 
 interface Props {
   initialData?: Partial<Product>;
@@ -204,18 +205,30 @@ export default function ProductForm({ initialData, productId }: Props) {
         </div>
       </div>
 
-      <div>
-        <label className={labelClass}>Image URLs</label>
-        <textarea
-          name="images"
-          rows={3}
-          placeholder={'https://example.com/image1.jpg\nhttps://example.com/image2.jpg'}
-          value={form.images}
-          onChange={handleChange}
-          className={`${inputClass} resize-none`}
-        />
-        <p className="mt-1.5 text-xs text-gray-400">One URL per line</p>
-      </div>
+     <div>
+  <label className={labelClass}>Product Images</label>
+  <ImageUpload
+    value={
+      // Parse current images — they may already be URLs from editing an existing product
+      form.images
+        ? form.images
+            .split('\n')
+            .map(s => s.trim())
+            .filter(Boolean)
+        : []
+    }
+    onChange={urls => {
+      setForm(prev => ({
+        ...prev,
+        images: urls.join('\n'),
+      }));
+    }}
+    maxImages={5}
+  />
+  <p className="mt-1.5 text-xs text-gray-400">
+    Drag and drop or click to upload. Images are compressed and hosted automatically.
+  </p>
+</div>
 
       {/* Feature toggle */}
       <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
