@@ -7,6 +7,7 @@ import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { useAuth } from '@/context/AuthContext';
 import UserNotificationBell from '@/components/layout/UserNotificationBell';
+import SearchBar from '@/components/search/SearchBar'; // <-- Added SearchBar import
 
 const navLinks = [
   { label: 'Home', href: '/' },
@@ -24,10 +25,9 @@ function isActive(pathname: string | null, href: string): boolean {
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-
+  const [searchOpen, setSearchOpen] = useState(false); // <-- Added search state
   const [scrolled, setScrolled] = useState(false); 
 
-  
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -39,6 +39,13 @@ export default function Navbar() {
   const { totalItems: wishlistCount } = useWishlist();
   const { user, loading, isPremium, logout } = useAuth();
 
+  // <-- Added effect to close search overlay on route change
+  useEffect(() => {
+    setSearchOpen(false);
+    setMenuOpen(false);
+    setProfileOpen(false);
+  }, [pathname]);
+
   return (
     <header className={`sticky top-0 z-50 border-b transition-all duration-300 ${
       scrolled
@@ -46,7 +53,7 @@ export default function Navbar() {
         : 'bg-white border-gray-100 shadow-sm'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-16 gap-4"> {/* Added gap-4 */}
 
           {/* Logo */}
           <Link href="/" className="flex-shrink-0">
@@ -72,8 +79,25 @@ export default function Navbar() {
             ))}
           </nav>
 
+          {/* ── Added Desktop SearchBar — inline ── */}
+          <div className="hidden md:block flex-1 max-w-sm">
+            <SearchBar />
+          </div>
+
           {/* Right side icons */}
           <div className="flex items-center gap-1">
+
+            {/* ── Added Mobile search icon ── */}
+            <button
+              onClick={() => setSearchOpen(!searchOpen)}
+              className="md:hidden p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+              aria-label="Search"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0" />
+              </svg>
+            </button>
 
             {/* User notification bell */}
             {!loading && user && user.role !== 'admin' && (
@@ -248,6 +272,16 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+
+      {/* ── Added Mobile search overlay — slides down under the navbar ── */}
+      {searchOpen && (
+        <div className="md:hidden border-t border-gray-100 bg-white px-4 py-3 shadow-sm">
+          <SearchBar
+            autoFocus
+            onSearch={() => setSearchOpen(false)}
+          />
+        </div>
+      )}
 
       {/* Mobile menu */}
       {menuOpen && (

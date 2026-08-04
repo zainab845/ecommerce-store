@@ -7,6 +7,8 @@ export async function getAllProducts(searchParams: {
   search?: string;
   sort?: string;
   featured?: string;
+  minPrice?: string;
+  maxPrice?: string;
   limit?: string | number;
   page?: number;
 }) {
@@ -15,9 +17,10 @@ export async function getAllProducts(searchParams: {
   const query: Record<string, unknown> = {};
 
   if (searchParams.category) {
-    // .lean() makes this 2-3x faster — returns plain JS object not Mongoose document
-    const cat = await Category.findOne({ slug: searchParams.category }).select('_id').lean();
-    if (!cat) return { products: [], totalCount: 0 }; // Unknown category → empty result fast
+    const cat = await Category.findOne({ slug: searchParams.category })
+      .select('_id')
+      .lean();
+    if (!cat) return { products: [], totalCount: 0 };
     query.category = cat._id;
   }
 
@@ -27,6 +30,18 @@ export async function getAllProducts(searchParams: {
 
   if (searchParams.featured === 'true') {
     query.isFeatured = true;
+  }
+
+  // Price range filter
+  if (searchParams.minPrice || searchParams.maxPrice) {
+    const priceFilter: Record<string, number> = {};
+    if (searchParams.minPrice) {
+      priceFilter.$gte = parseFloat(searchParams.minPrice);
+    }
+    if (searchParams.maxPrice) {
+      priceFilter.$lte = parseFloat(searchParams.maxPrice);
+    }
+    query.price = priceFilter;
   }
 
   let sortOption: Record<string, 1 | -1> = { createdAt: -1 };
@@ -47,9 +62,8 @@ export async function getAllProducts(searchParams: {
       .sort(sortOption)
       .skip(skip)
       .limit(limit)
-      // Only fetch fields needed for the listing — skips description, reviewCount etc.
-     .select('name price originalPrice images category stock isFeatured isPremiumOnly')
-      .lean(), // ← KEY OPTIMIZATION: plain objects instead of Mongoose documents
+      .select('name price originalPrice images category stock isFeatured isPremiumOnly')
+      .lean(),
     Product.countDocuments(query),
   ]);
 
