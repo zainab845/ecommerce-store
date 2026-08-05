@@ -7,6 +7,7 @@ import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { useAuth } from '@/context/AuthContext';
+import ImageZoom from '@/components/product/ImageZoom';
 
 function StarRating({ rating = 4.5, count = 24 }: { rating?: number; count?: number }) {
   return (
@@ -35,7 +36,6 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
-  const [activeImage, setActiveImage] = useState(0);
   const [added, setAdded] = useState(false);
   
   const { addItem } = useCart();
@@ -129,71 +129,17 @@ export default function ProductDetailPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* Images */}
-        <div className="space-y-3">
-          <div className="relative aspect-square bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
-            <img
-              src={product.images[activeImage] ?? '/placeholder.png'}
-              alt={product.name}
-              className={`w-full h-full object-cover transition-all duration-300 ${isLocked ? 'blur-md' : ''}`}
-            />
-            
-            {/* Badges */}
-            <div className="absolute top-4 left-4 flex flex-col gap-2">
-              {isOutOfStock && (
-                <span className="bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-full">
-                  Out of Stock
-                </span>
-              )}
-              {isLowStock && !isOutOfStock && (
-                <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-full">
-                  Only {product.stock} left
-                </span>
-              )}
-              {discountPct > 0 && !isOutOfStock && !isLocked && (
-                <span className="bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full">
-                  -{discountPct}%
-                </span>
-              )}
-              {product.isPremiumOnly && (
-                <span className="bg-amber-400 text-amber-900 text-xs font-bold px-3 py-1.5 rounded-full">
-                  Premium
-                </span>
-              )}
-            </div>
-
-            {/* Lock overlay */}
-            {isLocked && (
-              <div className="absolute inset-0 bg-white/40 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
-                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
-                  <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </div>
-                <p className="font-bold text-gray-900">Premium Members Only</p>
-                <Link href="/subscription"
-                  className="px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors">
-                  Upgrade to Access
-                </Link>
-              </div>
-            )}
-          </div>
-          
-          {product.images.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto">
-              {product.images.map((img, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveImage(i)}
-                  className={`flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-colors ${
-                    i === activeImage ? 'border-indigo-600' : 'border-gray-100 hover:border-gray-300'
-                  }`}
-                >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
+        <div>
+         <ImageZoom
+  images={product.images.length > 0 ? product.images : ['/placeholder.png']}
+  productName={product.name}
+  isOutOfStock={isOutOfStock}
+  isLowStock={isLowStock}
+  stock={product.stock}
+  discountPct={discountPct}
+  isPremiumOnly={product.isPremiumOnly}
+  isLocked={isLocked}
+/>
         </div>
 
         {/* Info */}
