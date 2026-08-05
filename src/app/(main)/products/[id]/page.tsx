@@ -3,11 +3,29 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { useAuth } from '@/context/AuthContext';
 import ImageZoom from '@/components/product/ImageZoom';
+import ReviewSection from '@/components/product/ReviewSection';
+import RelatedProducts from '@/components/product/RelatedProducts';
+import RecentlyViewed, { recordView } from '@/components/product/RecentlyViewed';
+
+interface Product {
+  _id: string;
+  name: string;
+  slug: string;
+  description: string;
+  price: number;
+  originalPrice?: number;
+  images: string[];
+  category: { _id: string; name: string; slug: string } | string;
+  stock: number;
+  isFeatured: boolean;
+  isPremiumOnly: boolean;
+  averageRating?: number;
+  reviewCount?: number;
+}
 
 function StarRating({ rating = 4.5, count = 24 }: { rating?: number; count?: number }) {
   return (
@@ -49,6 +67,18 @@ export default function ProductDetailPage() {
       .then(d => setProduct(d.product ?? null))
       .finally(() => setLoading(false));
   }, [id]);
+
+  // Record recently viewed when product loads
+  useEffect(() => {
+    if (!product) return;
+    recordView({
+      id: product._id,
+      name: product.name,
+      price: product.price,
+      image: product.images?.[0] ?? '',
+      viewedAt: Date.now(),
+    });
+  }, [product]);
 
   const handleAddToCart = () => {
     if (!product || product.stock === 0) return;
@@ -130,16 +160,16 @@ export default function ProductDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* Images */}
         <div>
-         <ImageZoom
-  images={product.images.length > 0 ? product.images : ['/placeholder.png']}
-  productName={product.name}
-  isOutOfStock={isOutOfStock}
-  isLowStock={isLowStock}
-  stock={product.stock}
-  discountPct={discountPct}
-  isPremiumOnly={product.isPremiumOnly}
-  isLocked={isLocked}
-/>
+          <ImageZoom
+            images={product.images.length > 0 ? product.images : ['/placeholder.png']}
+            productName={product.name}
+            isOutOfStock={isOutOfStock}
+            isLowStock={isLowStock}
+            stock={product.stock}
+            discountPct={discountPct}
+            isPremiumOnly={product.isPremiumOnly}
+            isLocked={isLocked}
+          />
         </div>
 
         {/* Info */}
@@ -154,7 +184,7 @@ export default function ProductDetailPage() {
           <h1 className="text-3xl font-bold text-gray-900 leading-tight">{product.name}</h1>
           
           <div className="mt-3">
-            <StarRating />
+            <StarRating rating={product.averageRating} count={product.reviewCount} />
           </div>
 
           <div className="mt-5 flex items-end gap-3">
@@ -264,7 +294,7 @@ export default function ProductDetailPage() {
                   )}
                 </button>
 
-                {/* Wishlist Button (Maintained from your code) */}
+                {/* Wishlist Button */}
                 <button
                   onClick={() => toggleItem(product._id)}
                   className={`px-4 py-4 rounded-2xl border-2 transition-colors ${
@@ -319,6 +349,30 @@ export default function ProductDetailPage() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Reviews */}
+      <div className="mt-8 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <ReviewSection
+          productId={product._id}
+          averageRating={product.averageRating ?? 0}
+          reviewCount={product.reviewCount ?? 0}
+        />
+      </div>
+
+      {/* Related Products */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {typeof product.category === 'object' && product.category !== null && (
+          <RelatedProducts
+            categorySlug={(product.category as any).slug}
+            currentProductId={product._id}
+          />
+        )}
+      </div>
+
+      {/* Recently Viewed */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <RecentlyViewed excludeId={product._id} />
       </div>
     </div>
   );
