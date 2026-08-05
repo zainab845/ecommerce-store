@@ -1,5 +1,4 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { isPageStatic } from 'next/dist/build/utils';
 
 export interface IProduct extends Document {
   name: string;
@@ -10,11 +9,11 @@ export interface IProduct extends Document {
   images: string[];
   category: mongoose.Types.ObjectId;
   stock: number;
-  rating: number;
-  reviewCount: number;
   isFeatured: boolean;
   createdAt: Date;
   isPremiumOnly: boolean;
+  averageRating: number; 
+  reviewCount: number;   
 }
 
 const ProductSchema = new Schema<IProduct>(
@@ -27,10 +26,10 @@ const ProductSchema = new Schema<IProduct>(
     images: [{ type: String }],
     category: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
     stock: { type: Number, required: true, default: 0, min: 0 },
-    rating: { type: Number, default: 0, min: 0, max: 5 },
-    reviewCount: { type: Number, default: 0 },
     isFeatured: { type: Boolean, default: false },
     isPremiumOnly: { type: Boolean, default: false },
+    averageRating: { type: Number, default: 0 },
+    reviewCount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

@@ -15,12 +15,21 @@ export default function ProductForm({ initialData, productId }: Props) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Parse initial images — they might be a single URL or an array
+  const getInitialImages = (): string[] => {
+    if (!initialData?.images) return [];
+    if (Array.isArray(initialData.images)) return initialData.images.filter(Boolean);
+    return [];
+  };
+
+  const [uploadedImages, setUploadedImages] = useState<string[]>(getInitialImages());
+
   const [form, setForm] = useState({
     name: initialData?.name ?? '',
     description: initialData?.description ?? '',
     price: initialData?.price?.toString() ?? '',
     originalPrice: initialData?.originalPrice?.toString() ?? '',
-    images: initialData?.images?.join('\n') ?? '',
     category:
       typeof initialData?.category === 'object' && initialData.category !== null
         ? (initialData.category as Category)._id
@@ -67,10 +76,7 @@ export default function ProductForm({ initialData, productId }: Props) {
         description: form.description.trim(),
         price: parseFloat(form.price),
         originalPrice: form.originalPrice ? parseFloat(form.originalPrice) : undefined,
-        images: form.images
-          .split('\n')
-          .map(s => s.trim())
-          .filter(Boolean),
+        images: uploadedImages, // Uses the dedicated images state array
         category: form.category,
         stock: parseInt(form.stock) || 0,
         isFeatured: form.isFeatured,
@@ -205,30 +211,17 @@ export default function ProductForm({ initialData, productId }: Props) {
         </div>
       </div>
 
-     <div>
-  <label className={labelClass}>Product Images</label>
-  <ImageUpload
-    value={
-      // Parse current images — they may already be URLs from editing an existing product
-      form.images
-        ? form.images
-            .split('\n')
-            .map(s => s.trim())
-            .filter(Boolean)
-        : []
-    }
-    onChange={urls => {
-      setForm(prev => ({
-        ...prev,
-        images: urls.join('\n'),
-      }));
-    }}
-    maxImages={5}
-  />
-  <p className="mt-1.5 text-xs text-gray-400">
-    Drag and drop or click to upload. Images are compressed and hosted automatically.
-  </p>
-</div>
+      <div>
+        <label className={labelClass}>Product Images</label>
+        <ImageUpload
+          value={uploadedImages}
+          onChange={setUploadedImages}
+          maxImages={5}
+        />
+        <p className="mt-1.5 text-xs text-gray-400">
+          Drag and drop or click to upload. Images are compressed and hosted automatically.
+        </p>
+      </div>
 
       {/* Feature toggle */}
       <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
