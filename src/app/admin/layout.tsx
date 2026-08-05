@@ -39,6 +39,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin/chat', label: 'Chat', icon: '💬', badge: chatUnread }, // Added badge property
     { href: '/admin/users', label: 'Users', icon: '👥' },
     { href: '/admin/coupons', label: 'Coupons', icon: '🏷️' },
+    { href: '/admin/reviews', label: 'Reviews', icon: '⭐' },
   ];
 
   return (
