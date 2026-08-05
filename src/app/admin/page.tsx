@@ -25,24 +25,25 @@ async function getDashboardData() {
       Order.countDocuments(),
       UserModel.countDocuments({ role: 'user' }),
       ProductModel.countDocuments(),
-      Order.find().select('totalAmount createdAt').lean(),
+      // ADDED 'status' TO THE SELECT QUERY SO WE CAN FILTER IT
+      Order.find().select('totalAmount createdAt status').lean(),
       Order.find()
         .sort({ createdAt: -1 })
         .limit(5)
         .populate('user', 'name')
         .select('user totalAmount status createdAt')
         .lean(),
-      UserModel.countDocuments({ 'subscription.status': 'active' }), // <-- Fetch active subs
+      UserModel.countDocuments({ 'subscription.status': 'active' }),
     ]);
 
-  // Calculate Product Revenue
-  const productRevenue = allOrders.reduce(
-    (sum, o) => sum + ((o.totalAmount as number) || 0),
-    0
-  );
+  // Calculate Product Revenue (ONLY valid statuses, ignoring Refunded/Cancelled)
+  const validStatuses = ['Paid', 'Accepted', 'Delivered'];
+  const productRevenue = allOrders
+    .filter(o => validStatuses.includes(o.status))
+    .reduce((sum, o) => sum + ((o.totalAmount as number) || 0), 0);
 
   // Calculate Subscription Revenue
-  const subscriptionPrice = 9.99; // Change this if your price is different
+  const subscriptionPrice = 9.99;
   const subscriptionRevenue = activeSubscribers * subscriptionPrice;
 
   // Calculate Total Revenue
@@ -69,9 +70,14 @@ async function getRevenueData() {
   const currentYear = now.getFullYear();
   const SUB_PRICE = 9.99;
 
-  // Monthly — current year products
+  // Monthly — current year products (EXPANDED TO INCLUDE PAID, ACCEPTED, DELIVERED)
   const productMonthlyRaw = await Order.aggregate([
-    { $match: { createdAt: { $gte: new Date(currentYear, 0, 1) }, status: 'Paid' } },
+    { 
+      $match: { 
+        createdAt: { $gte: new Date(currentYear, 0, 1) }, 
+        status: { $in: ['Paid', 'Accepted', 'Delivered'] } 
+      } 
+    },
     { $group: { _id: { $month: '$createdAt' }, revenue: { $sum: '$totalAmount' } } },
   ]);
 
