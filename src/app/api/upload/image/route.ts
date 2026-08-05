@@ -105,3 +105,27 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// DELETE — remove image from Cloudinary when admin removes it from the form
+export async function DELETE(request: NextRequest) {
+  try {
+    const token = request.cookies.get('token')?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { payload } = await jwtVerify(token, secret);
+    if (payload.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const { publicId } = await request.json();
+    if (!publicId) {
+      return NextResponse.json({ error: 'publicId is required' }, { status: 400 });
+    }
+
+    await cloudinary.uploader.destroy(publicId);
+    return NextResponse.json({ message: 'Image deleted' });
+  } catch (error: any) {
+    console.error('Image delete error:', error);
+    return NextResponse.json({ error: 'Failed to delete image' }, { status: 500 });
+  }
+}
