@@ -60,13 +60,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-white rounded-2xl shadow-lg border border-gray-100 text-gray-700 hover:bg-gray-50 transition-colors"
-      >
-        <span className="text-2xl">☰</span>
-      </button>
+      {/* Mobile Menu Button - Hides when sidebar is open */}
+      {!sidebarOpen && (
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-white rounded-2xl shadow-lg border border-gray-100 text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          <span className="text-2xl">☰</span>
+        </button>
+      )}
 
       {/* Sidebar */}
       <div className={`
@@ -74,11 +76,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 transition-transform duration-300 z-40
         shadow-2xl lg:shadow-none
-        flex flex-col          /* ← flex column so footer stays at bottom */
+        flex flex-col
       `}>
 
         {/* Brand — fixed height */}
-        <div className="flex-shrink-0 px-6 pt-6 pb-4">
+        <div className="flex-shrink-0 px-6 pt-6 pb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center text-gray-900 font-bold text-xl">
               E
@@ -90,6 +92,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </span>
             </div>
           </div>
+          
+          {/* Mobile Close Sidebar Button */}
+          <button 
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden text-gray-400 hover:text-white p-1"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
         {/* Nav links — scrollable, takes remaining height */}

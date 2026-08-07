@@ -143,10 +143,12 @@ export default function AdminContactPage() {
           <div className="divide-y divide-gray-50">
             {messages.map(msg => (
               <div key={msg._id} className="p-5 sm:p-6 hover:bg-gray-50 transition-colors">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                  
+                  {/* Message Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-gray-900">{msg.name}</p>
+                      <p className="font-semibold text-gray-900 break-words">{msg.name}</p>
                       {msg.replied && (
                         <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -156,12 +158,15 @@ export default function AdminContactPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-500">{msg.email}</p>
+                    {/* break-all ensures long emails don't stretch the screen on mobile */}
+                    <p className="text-sm text-gray-500 break-all">{msg.email}</p>
                     {msg.subject && (
-                      <p className="text-xs text-indigo-600 font-medium mt-1">{msg.subject}</p>
+                      <p className="text-xs text-indigo-600 font-medium mt-1 break-words">{msg.subject}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
+
+                  {/* Date and Action - Wraps and spreads out nicely on mobile */}
+                  <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto flex-shrink-0 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t border-gray-100 sm:border-0">
                     <span className="text-xs text-gray-400">
                       {new Date(msg.createdAt).toLocaleDateString('en-US', {
                         day: 'numeric', month: 'short', year: 'numeric',
@@ -178,10 +183,16 @@ export default function AdminContactPage() {
                       Reply
                     </button>
                   </div>
+
                 </div>
-                <p className="mt-3 text-gray-700 text-sm leading-relaxed">{msg.message}</p>
+
+                {/* Message Body - Added break-words to stop horizontal scrolling */}
+                <p className="mt-4 text-gray-700 text-sm leading-relaxed break-words whitespace-pre-wrap">
+                  {msg.message}
+                </p>
+                
                 {msg.replied && msg.repliedAt && (
-                  <p className="mt-2 text-xs text-green-600">
+                  <p className="mt-3 text-xs text-green-600 font-medium">
                     Replied on {new Date(msg.repliedAt).toLocaleDateString('en-US', {
                       day: 'numeric', month: 'short', year: 'numeric',
                     })}
@@ -195,16 +206,18 @@ export default function AdminContactPage() {
 
       {/* Reply Modal */}
       {modal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
+          {/* Added max-h-[90vh] and flex-col so it doesn't get cut off on short mobile screens */}
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg my-auto max-h-[90vh] flex flex-col">
+            
             {/* Modal header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">Reply to {modal.toName}</h2>
-                <p className="text-sm text-gray-500">{modal.toEmail}</p>
+            <div className="flex flex-shrink-0 items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div className="min-w-0 pr-4">
+                <h2 className="text-lg font-bold text-gray-900 truncate">Reply to {modal.toName}</h2>
+                <p className="text-sm text-gray-500 truncate">{modal.toEmail}</p>
               </div>
               <button onClick={() => setModal(closedModal)}
-                className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M6 18L18 6M6 6l12 12" />
@@ -212,8 +225,8 @@ export default function AdminContactPage() {
               </button>
             </div>
 
-            {/* Modal body */}
-            <div className="px-6 py-5 space-y-4">
+            {/* Modal body - Added overflow-y-auto so the textarea scrolls if needed */}
+            <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Subject</label>
                 <input type="text" value={modal.replySubject}
@@ -236,7 +249,7 @@ export default function AdminContactPage() {
             </div>
 
             {/* Modal footer */}
-            <div className="flex gap-3 px-6 pb-6">
+            <div className="flex gap-3 px-6 pb-6 pt-2 flex-shrink-0">
               <button onClick={() => setModal(closedModal)}
                 className="flex-1 py-2.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors">
                 Cancel
@@ -254,6 +267,7 @@ export default function AdminContactPage() {
                 ) : 'Send Reply'}
               </button>
             </div>
+            
           </div>
         </div>
       )}

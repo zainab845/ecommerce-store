@@ -2,13 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 export default function AdminLoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -31,12 +29,12 @@ export default function AdminLoginPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');
-      router.push('/admin');
-      router.refresh();
+      
+      // FIX: Force a hard reload navigation to clear the Next.js router cache
+      window.location.href = '/admin';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
-    } finally {
-      setLoading(false);
+      setLoading(false); // Only stop loading if there's an error (prevents flickering on success)
     }
   };
 
@@ -91,15 +89,14 @@ export default function AdminLoginPage() {
               />
             </div>
 
-            {/* Add after the password input div */}
-<div className="flex justify-end">
-  <Link
-    href="/forgot-password"
-    className="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
-  >
-    Forgot password?
-  </Link>
-</div>
+            <div className="flex justify-end">
+              <Link
+                href="/forgot-password"
+                className="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
 
             {error && (
               <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl">
