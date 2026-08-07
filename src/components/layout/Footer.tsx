@@ -16,8 +16,8 @@ export default function Footer() {
     setMessage('');
 
     try {
-      // Assuming you have this endpoint based on your admin panel subscribers list
-      const res = await fetch('/api/subscribers', {
+     
+      const res = await fetch('/api/newsletter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
