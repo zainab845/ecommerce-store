@@ -1,9 +1,43 @@
+'use client';
 
-
-
-const Link = (props: any) => <a {...props} />;
+import { useState } from 'react';
+import Link from 'next/link';
 
 export default function Footer() {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [message, setMessage] = useState('');
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+
+    setStatus('loading');
+    setMessage('');
+
+    try {
+      // Assuming you have this endpoint based on your admin panel subscribers list
+      const res = await fetch('/api/subscribers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      if (res.ok) {
+        setStatus('success');
+        setMessage('You have been subscribed!');
+        setEmail('');
+      } else {
+        const data = await res.json();
+        setStatus('error');
+        setMessage(data.error || 'Failed to subscribe. Please try again.');
+      }
+    } catch (err) {
+      setStatus('error');
+      setMessage('An error occurred. Please try again later.');
+    }
+  };
+
   return (
     <footer className="bg-gray-900 text-white pt-12 pb-8 mt-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -45,27 +79,40 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4 border-b border-gray-700 pb-2 inline-block">Stay Updated</h3>
             <p className="text-gray-400 text-sm mb-4">Subscribe to our newsletter for the latest deals and updates.</p>
-            <form className="flex flex-col space-y-2">
+            
+            <form onSubmit={handleSubscribe} className="flex flex-col space-y-2">
               <input 
                 type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email" 
                 className="px-4 py-2 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-gray-700"
                 required
+                disabled={status === 'loading' || status === 'success'}
               />
               <button 
-                type="button" 
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                type="submit" 
+                disabled={status === 'loading' || status === 'success'}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50"
               >
-                Subscribe
+                {status === 'loading' ? 'Subscribing...' : status === 'success' ? 'Subscribed ✓' : 'Subscribe'}
               </button>
             </form>
+            
+            {/* Feedback Message */}
+            {message && (
+              <p className={`mt-2 text-sm font-medium ${status === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>
+                {message}
+              </p>
+            )}
+            
           </div>
         </div>
 
         {/* Bottom Copyright */}
         <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-500 text-sm text-center md:text-left">
-            &copy; {new Date().getFullYear()}E-Shop. All rights reserved.
+            &copy; {new Date().getFullYear()} E-Shop. All rights reserved.
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <span className="text-gray-500 hover:text-white cursor-pointer transition-colors">FB</span>
