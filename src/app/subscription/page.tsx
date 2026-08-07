@@ -141,22 +141,37 @@ export default function SubscriptionPage() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
-        <div className="border border-gray-200 rounded-2xl p-8">
+        <div className="border border-gray-200 rounded-2xl p-8 flex flex-col">
           <h2 className="text-2xl font-bold">Free</h2>
           <div className="mt-4 mb-8">
             <span className="text-5xl font-bold">$0</span>
             <span className="text-gray-500">/month</span>
           </div>
-          <ul className="space-y-3">
+          <ul className="space-y-3 flex-1">
             {features.free.map(f => (
               <li key={f} className="flex items-center gap-2">
                 <span className="text-green-500">✓</span> {f}
               </li>
             ))}
           </ul>
+          
+          {/* ADDED CTA BUTTON FOR FREE PLAN */}
+          <button
+            onClick={() => {
+              if (!user) router.push('/login?from=/subscription');
+            }}
+            disabled={!!user}
+            className={`w-full mt-8 py-3 font-semibold rounded-xl transition-colors ${
+              user
+                ? 'bg-gray-100 text-gray-500 cursor-default'
+                : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            {user ? 'Current Plan' : 'Get Started'}
+          </button>
         </div>
 
-        <div className="border-2 border-indigo-600 rounded-2xl p-8 relative">
+        <div className="border-2 border-indigo-600 rounded-2xl p-8 relative flex flex-col">
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs px-4 py-1 rounded-full">
             RECOMMENDED
           </div>
@@ -165,7 +180,7 @@ export default function SubscriptionPage() {
             <span className="text-5xl font-bold">$9.99</span>
             <span className="text-gray-500">/month</span>
           </div>
-          <ul className="space-y-3">
+          <ul className="space-y-3 flex-1">
             {features.premium.map(f => (
               <li key={f} className="flex items-center gap-2">
                 <span className="text-green-500">✓</span> {f}
