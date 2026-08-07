@@ -145,7 +145,7 @@ export default function UserNotificationBell({ userId }: Props) {
       </button>
 
       {open && (
-        <div className="absolute -right-2 sm:right-0 top-full mt-2 w-[300px] sm:w-96 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden">
+        <div className="fixed left-4 right-4 top-[70px] sm:absolute sm:top-full sm:left-auto sm:-right-2 sm:mt-2 sm:w-96 bg-white border border-gray-100 rounded-2xl shadow-xl z-[100] overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <h3 className="font-semibold text-gray-900 text-sm">Notifications</h3>
             {unreadCount > 0 && (
@@ -155,6 +155,7 @@ export default function UserNotificationBell({ userId }: Props) {
               </button>
             )}
           </div>
+          
 
           <div className="max-h-[320px] overflow-y-auto">
             {notifications.length === 0 ? (
